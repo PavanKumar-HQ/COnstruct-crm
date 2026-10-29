@@ -5,25 +5,7 @@ import { assertPermission, assertTenantAccess, PERMISSIONS } from "../lib/permis
 import { logAuditEvent } from "../lib/audit";
 import { LeadPriority, LeadStatus, Prisma } from "@prisma/client";
 import Decimal from "decimal.js";
-
-export const CreateLeadSchema = z.object({
-  customerId: z.string().uuid().optional().nullable(),
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  source: z.string().min(2, "Source is required"),
-  priority: z.nativeEnum(LeadPriority).default(LeadPriority.MEDIUM),
-  constructionType: z.string().optional().nullable(),
-  estimatedBudget: z.number().positive().optional().nullable(),
-  expectedStartDate: z.string().datetime().optional().nullable(),
-  expectedCloseDate: z.string().datetime().optional().nullable(),
-  requirements: z.string().optional().nullable(),
-  assignedToId: z.string().uuid().optional().nullable(),
-  contactName: z.string().optional().nullable(),
-  contactPhone: z.string().optional().nullable(),
-  contactEmail: z.string().email().optional().nullable(),
-  siteAddress: z.string().optional().nullable(),
-});
-
-export type CreateLeadInput = z.infer<typeof CreateLeadSchema>;
+import { CreateLeadSchema, CreateLeadInput } from "./lead.types";
 
 export const UpdateLeadStatusSchema = z.object({
   status: z.nativeEnum(LeadStatus),
@@ -36,6 +18,16 @@ export class LeadService {
     assertPermission(session, PERMISSIONS.LEADS_WRITE);
 
     const input = CreateLeadSchema.parse(rawInput);
+
+    // If customerId is provided, enforce that the customer belongs to this organization
+    if (input.customerId) {
+      const customer = await prisma.customer.findFirst({
+        where: { id: input.customerId, organizationId: session.organizationId },
+      });
+      if (!customer) {
+        throw new Error("Specified customer does not exist in this organization");
+      }
+    }
 
     const lead = await prisma.lead.create({
       data: {
@@ -87,7 +79,12 @@ export class LeadService {
       throw new Error("Lead not found or inaccessible");
     }
 
-    if (input.status === LeadStatus.LOST && !input.lossReason) {
+    // Disallow altering status once WON or converted
+    if (existing.status === LeadStatus.WON && input.status !== LeadStatus.WON) {
+      throw new Error("Won/converted leads cannot be transitioned to another status");
+    }
+
+    if (input.status === LeadStatus.LOST && (!input.lossReason || input.lossReason.trim().length === 0)) {
       throw new Error("Loss reason is mandatory when marking a lead as LOST");
     }
 

@@ -30,6 +30,25 @@ export class SiteVisitService {
       throw new Error("Site visit must be associated with a customer or a lead");
     }
 
+    // Verify lead/customer belongs to this organization
+    if (input.leadId) {
+      const lead = await prisma.lead.findFirst({
+        where: { id: input.leadId, organizationId: session.organizationId },
+      });
+      if (!lead) {
+        throw new Error("Specified lead not found in this organization");
+      }
+    }
+
+    if (input.customerId) {
+      const customer = await prisma.customer.findFirst({
+        where: { id: input.customerId, organizationId: session.organizationId },
+      });
+      if (!customer) {
+        throw new Error("Specified customer not found in this organization");
+      }
+    }
+
     const scheduledDate = new Date(input.scheduledDate);
     if (isNaN(scheduledDate.getTime())) {
       throw new Error("Invalid scheduled date");

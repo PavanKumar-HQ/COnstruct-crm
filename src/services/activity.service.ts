@@ -16,6 +16,24 @@ export class ActivityService {
       throw new Error("Activity must be associated with either a customer or a lead");
     }
 
+    if (input.leadId) {
+      const lead = await prisma.lead.findFirst({
+        where: { id: input.leadId, organizationId: session.organizationId },
+      });
+      if (!lead) {
+        throw new Error("Specified lead not found in this organization");
+      }
+    }
+
+    if (input.customerId) {
+      const customer = await prisma.customer.findFirst({
+        where: { id: input.customerId, organizationId: session.organizationId },
+      });
+      if (!customer) {
+        throw new Error("Specified customer not found in this organization");
+      }
+    }
+
     const activity = await prisma.activity.create({
       data: {
         organizationId: session.organizationId,
