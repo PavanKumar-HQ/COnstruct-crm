@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  Kanban,
   CheckSquare,
   Users,
   Building2,
@@ -47,7 +48,6 @@ interface NavGroup {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isDemoActive, setIsDemoActive] = useState(true);
   const [demoSwitching, setDemoSwitching] = useState(false);
 
   const navigationGroups: NavGroup[] = [
@@ -55,9 +55,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       groupTitle: "Workspace",
       items: [
         { name: "Executive Dashboard", href: "/dashboard", icon: LayoutDashboard, isImplemented: true },
-        { name: "My Work & Tasks", href: "/my-work", icon: CheckSquare, badge: "Planned", isImplemented: false },
-        { name: "Notifications", href: "/notifications", icon: Bell, badge: "Planned", isImplemented: false },
-        { name: "Global Search", href: "/search", icon: Search, badge: "Planned", isImplemented: false },
+        { name: "Executive Pipeline", href: "/pipeline", icon: Kanban, badge: "Live", isImplemented: true },
+        { name: "My Work & Tasks", href: "/my-work", icon: CheckSquare, badge: "Live", isImplemented: true },
       ],
     },
     {
@@ -67,36 +66,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         { name: "Clients & Contacts", href: "/crm?tab=customers", icon: Building2, isImplemented: true },
         { name: "Estimates & BOQ", href: "/crm?tab=estimates", icon: FileSpreadsheet, isImplemented: true },
         { name: "Formal Quotations", href: "/quotations", icon: FileCheck, isImplemented: true },
-        { name: "Contracts & Baseline", href: "/contracts", icon: FileText, badge: "Phase 3.3", isImplemented: false },
+        { name: "Prime Contracts", href: "/contracts", icon: FileText, badge: "Live", isImplemented: true },
       ],
     },
     {
       groupTitle: "Project Execution",
       items: [
-        { name: "Projects Portfolio", href: "/projects", icon: FolderKanban, badge: "Phase 4", isImplemented: false },
-        { name: "Site Operations & Logs", href: "/site", icon: HardHat, badge: "Phase 4", isImplemented: false },
+        { name: "Projects Portfolio", href: "/projects", icon: FolderKanban, badge: "Live", isImplemented: true },
+        { name: "Site Operations & Logs", href: "/site", icon: HardHat, badge: "Live", isImplemented: true },
       ],
     },
     {
       groupTitle: "Finance & Treasury",
       items: [
-        { name: "Income & Invoicing", href: "/finance/income", icon: Banknote, badge: "Phase 6", isImplemented: false },
-        { name: "Expenses & Cost Control", href: "/finance/expenses", icon: Receipt, badge: "Phase 6", isImplemented: false },
-        { name: "Treasury & Cash Flow", href: "/treasury", icon: Wallet, badge: "Phase 7", isImplemented: false },
+        { name: "Income & Invoicing", href: "/finance/income", icon: Banknote, badge: "Live", isImplemented: true },
+        { name: "Expenses & Cost Codes", href: "/finance/expenses", icon: Receipt, badge: "Live", isImplemented: true },
+        { name: "Treasury & Cash Flow", href: "/treasury", icon: Wallet, badge: "Live", isImplemented: true },
       ],
     },
     {
       groupTitle: "Procurement & Resources",
       items: [
-        { name: "Purchase Orders", href: "/procurement", icon: Truck, badge: "Phase 5", isImplemented: false },
-        { name: "Inventory & Stores", href: "/inventory", icon: Package, badge: "Phase 5", isImplemented: false },
+        { name: "Purchase Orders", href: "/procurement", icon: Truck, badge: "Live", isImplemented: true },
+        { name: "Inventory & Stores", href: "/inventory", icon: Package, badge: "Live", isImplemented: true },
       ],
     },
     {
-      groupTitle: "Knowledge & Operations",
+      groupTitle: "Knowledge & Compliance",
       items: [
-        { name: "Knowledge Base", href: "/knowledge", icon: BookOpen, badge: "Phase 8", isImplemented: false },
-        { name: "Audit Trail", href: "/settings/audit", icon: Sliders, badge: "Active", isImplemented: true },
+        { name: "Knowledge Base", href: "/knowledge", icon: BookOpen, badge: "Live", isImplemented: true },
+        { name: "Audit Trail", href: "/settings/audit", icon: Sliders, badge: "Protected", isImplemented: true },
       ],
     },
   ];
@@ -180,10 +179,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         href={item.href}
                         className={`flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium transition-colors ${
                           isActive
-                            ? "bg-indigo-600 text-white"
-                            : item.isImplemented
-                            ? "text-slate-200 hover:bg-slate-800 hover:text-white"
-                            : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-300"
+                            ? "bg-indigo-600 text-white font-semibold"
+                            : "text-slate-300 hover:bg-slate-800 hover:text-white"
                         }`}
                       >
                         <span className="flex items-center gap-2.5 truncate">
@@ -193,7 +190,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         {item.badge && (
                           <span
                             className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
-                              item.isImplemented
+                              item.badge === "Live"
                                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                                 : "bg-slate-800 text-slate-400 border border-slate-700"
                             }`}
@@ -241,11 +238,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               {pathname === "/dashboard"
-                ? "Overview Dashboard"
+                ? "Executive Overview"
+                : pathname === "/pipeline"
+                ? "Executive Pipeline"
+                : pathname === "/projects"
+                ? "Projects Portfolio"
                 : pathname === "/crm"
                 ? "CRM & Pipeline"
                 : pathname === "/quotations"
                 ? "Commercial Quotations"
+                : pathname === "/contracts"
+                ? "Prime Contracts"
+                : pathname === "/treasury"
+                ? "Treasury & Cash"
+                : pathname === "/finance/income"
+                ? "Income & Invoicing"
+                : pathname === "/finance/expenses"
+                ? "Expenses & Costs"
+                : pathname === "/procurement"
+                ? "Procurement & POs"
+                : pathname === "/inventory"
+                ? "Inventory & Stores"
+                : pathname === "/knowledge"
+                ? "Knowledge Base"
+                : pathname === "/my-work"
+                ? "My Work"
                 : "Operations Platform"}
             </span>
             <span className="text-slate-300">/</span>
@@ -253,10 +270,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center text-xs text-slate-500 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 gap-2">
-              <Search className="w-3.5 h-3.5 text-slate-400" />
-              <span>Global Search (Cmd + K)</span>
-            </div>
+            <Link
+              href="/pipeline"
+              className="text-xs px-3 py-1.5 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-semibold transition flex items-center gap-1.5"
+            >
+              <Kanban className="w-3.5 h-3.5" />
+              Executive Pipeline
+            </Link>
             <Link
               href="/crm"
               className="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition"
@@ -272,4 +292,3 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
