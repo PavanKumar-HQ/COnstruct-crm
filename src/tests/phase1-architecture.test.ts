@@ -3,9 +3,8 @@ import { PrismaClient } from "@prisma/client";
 import { hashPassword, createSessionToken, validateActiveSession } from "@/lib/auth";
 import { assertPermission, assertTenantAccess, AuthorizationError, AuthenticationError, PERMISSIONS } from "@/lib/permissions";
 import { CurrencyMath } from "@/lib/decimal";
-import Decimal from "decimal.js";
+import { cleanTestDatabase } from "./test-utils";
 
-// Test database connection
 const testPrisma = new PrismaClient({
   datasources: {
     db: {
@@ -23,12 +22,7 @@ describe("Phase 1 Architecture Verification Tests", () => {
   let roleSiteEngAId: string;
 
   beforeAll(async () => {
-    // Clean test schema
-    await testPrisma.auditLog.deleteMany();
-    await testPrisma.membership.deleteMany();
-    await testPrisma.role.deleteMany();
-    await testPrisma.user.deleteMany();
-    await testPrisma.organization.deleteMany();
+    await cleanTestDatabase(testPrisma);
 
     // Create Organization A
     const orgA = await testPrisma.organization.create({
@@ -224,4 +218,3 @@ describe("Phase 1 Architecture Verification Tests", () => {
     });
   });
 });
-
