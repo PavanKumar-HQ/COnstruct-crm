@@ -69,3 +69,4 @@ export class CurrencyMath {
     return this.subtract(postedInvoicesTotal, allocatedPaymentsTotal, creditsTotal);
   }
 }
+

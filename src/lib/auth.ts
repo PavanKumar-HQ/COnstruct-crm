@@ -5,6 +5,8 @@ import { prisma } from "./db";
 
 const SECRET_KEY = new TextEncoder().encode(env.AUTH_SECRET);
 const ALGORITHM = "HS256";
+const ISSUER = "construct-crm";
+const AUDIENCE = "construct-crm-client";
 
 export interface SessionPayload {
   userId: string;
@@ -29,6 +31,8 @@ export async function createSessionToken(payload: SessionPayload): Promise<strin
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: ALGORITHM })
     .setIssuedAt()
+    .setIssuer(ISSUER)
+    .setAudience(AUDIENCE)
     .setExpirationTime(`${expSeconds}s`)
     .sign(SECRET_KEY);
 }
@@ -37,6 +41,8 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY, {
       algorithms: [ALGORITHM],
+      issuer: ISSUER,
+      audience: AUDIENCE,
     });
     return payload as unknown as SessionPayload;
   } catch {
@@ -81,5 +87,19 @@ export async function validateActiveSession(token: string): Promise<SessionPaylo
     roleCode: membership.role.code,
     permissions: membership.role.permissions,
     email: membership.user.email,
+  };
+}
+
+/**
+ * Returns security-hardened cookie configuration for session tokens.
+ */
+export function getSessionCookieOptions(isProduction: boolean = env.NODE_ENV === "production") {
+  return {
+    name: env.AUTH_SESSION_COOKIE_NAME,
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: env.AUTH_SESSION_TTL_HOURS * 3600,
   };
 }

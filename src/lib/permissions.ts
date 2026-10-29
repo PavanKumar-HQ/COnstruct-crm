@@ -84,3 +84,4 @@ export function assertTenantAccess(session: SessionPayload | null, targetOrganiz
     throw new AuthorizationError("Cross-tenant access violation");
   }
 }
+
