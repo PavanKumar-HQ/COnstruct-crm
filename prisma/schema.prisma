@@ -28,18 +28,20 @@ model Organization {
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
-  memberships  Membership[]
-  roles        Role[]
-  auditLogs    AuditLog[]
-  customers    Customer[]
-  contacts     Contact[]
-  leads        Lead[]
-  activities   Activity[]
-  siteVisits   SiteVisit[]
-  attachments  Attachment[]
-  estimates    Estimate[]
+  memberships       Membership[]
+  roles             Role[]
+  auditLogs         AuditLog[]
+  customers         Customer[]
+  contacts          Contact[]
+  leads             Lead[]
+  activities        Activity[]
+  siteVisits        SiteVisit[]
+  attachments       Attachment[]
+  estimates         Estimate[]
   estimateRevisions EstimateRevision[]
-  boqItems     BoqItem[]
+  boqItems          BoqItem[]
+  quotations        Quotation[]
+  quotationRevisions QuotationRevision[]
 
   @@map("organizations")
 }
@@ -70,6 +72,8 @@ model User {
   uploadedAttachments Attachment[]
   createdEstimates  Estimate[]
   createdRevisions  EstimateRevision[]
+  createdQuotations Quotation[]
+  createdQuotationRevisions QuotationRevision[]
 
   @@map("users")
 }
@@ -127,6 +131,8 @@ enum AuditAction {
   LOGIN
   REVOKE
   CONVERT
+  SEND
+  ACCEPT
 }
 
 model AuditLog {
@@ -192,6 +198,7 @@ model Customer {
   siteVisits     SiteVisit[]
   attachments    Attachment[]
   estimates      Estimate[]
+  quotations     Quotation[]
 
   @@index([organizationId, status])
   @@index([organizationId, email])
@@ -268,6 +275,7 @@ model Lead {
   siteVisits          SiteVisit[]
   attachments         Attachment[]
   estimates           Estimate[]
+  quotations          Quotation[]
 
   @@index([organizationId, status])
   @@index([organizationId, assignedToId])
@@ -427,6 +435,7 @@ model Estimate {
   customer       Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
   createdBy      User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
   revisions      EstimateRevision[]
+  quotations     Quotation[]
 
   @@unique([organizationId, estimateNumber])
   @@index([organizationId, leadId])
@@ -460,6 +469,7 @@ model EstimateRevision {
   estimate             Estimate         @relation(fields: [estimateId], references: [id], onDelete: Cascade)
   createdBy            User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
   items                BoqItem[]
+  quotationRevisions   QuotationRevision[]
 
   @@unique([estimateId, versionNumber])
   @@index([organizationId, estimateId])
@@ -496,4 +506,79 @@ model BoqItem {
 
   @@index([organizationId, revisionId])
   @@map("boq_items")
+}
+
+// -------------------------------------------------------------
+// MODULE D: FORMAL QUOTATIONS & PROPOSALS (PHASE 3.2)
+// -------------------------------------------------------------
+
+enum QuotationStatus {
+  DRAFT
+  ISSUED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model Quotation {
+  id              String             @id @default(uuid())
+  organizationId  String
+  quotationNumber String             // E.g. "QUOT-2026-0001"
+  estimateId      String
+  leadId          String?
+  customerId      String?
+  createdById     String
+  currentVersion  Int                @default(1)
+  status          QuotationStatus    @default(DRAFT)
+  validUntil      DateTime
+  paymentTerms    String?
+  inclusions      String?
+  exclusions      String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  estimate        Estimate           @relation(fields: [estimateId], references: [id], onDelete: Restrict)
+  lead            Lead?              @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  customer        Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy       User               @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  revisions       QuotationRevision[]
+
+  @@unique([organizationId, quotationNumber])
+  @@index([organizationId, leadId])
+  @@index([organizationId, customerId])
+  @@map("quotations")
+}
+
+model QuotationRevision {
+  id                   String           @id @default(uuid())
+  organizationId       String
+  quotationId          String
+  estimateRevisionId   String
+  versionNumber        Int
+  status               QuotationStatus  @default(DRAFT)
+  createdById          String
+
+  // Frozen Commercial Values from Approved Estimate Revision
+  subtotalAmount       Decimal          @db.Decimal(15, 2) // Pre-tax selling price
+  taxPercentage        Decimal          @db.Decimal(5, 2)
+  taxAmount            Decimal          @db.Decimal(15, 2)
+  discountAmount       Decimal          @default(0) @db.Decimal(15, 2)
+  finalGrandTotal      Decimal          @db.Decimal(15, 2) // subtotal + tax - discount
+
+  issuedAt             DateTime?
+  acceptedAt           DateTime?
+  rejectionReason      String?
+  notes                String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  organization         Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  quotation            Quotation        @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  estimateRevision     EstimateRevision @relation(fields: [estimateRevisionId], references: [id], onDelete: Restrict)
+  createdBy            User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@unique([quotationId, versionNumber])
+  @@index([organizationId, quotationId])
+  @@map("quotation_revisions")
 }
