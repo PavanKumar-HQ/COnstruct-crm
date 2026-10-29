@@ -21,6 +21,9 @@ export const CreateCustomerSchema = z.object({
 
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;
 
+export const UpdateCustomerSchema = CreateCustomerSchema.partial();
+export type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>;
+
 export class CustomerService {
   /**
    * Identifies potential duplicate customers within the organization by email or phone.
@@ -88,6 +91,53 @@ export class CustomerService {
     });
 
     return customer;
+  }
+
+  static async updateCustomer(session: SessionPayload, customerId: string, rawInput: UpdateCustomerInput) {
+    assertTenantAccess(session, session.organizationId);
+    assertPermission(session, PERMISSIONS.LEADS_WRITE);
+
+    const input = UpdateCustomerSchema.parse(rawInput);
+
+    const existing = await prisma.customer.findFirst({
+      where: { id: customerId, organizationId: session.organizationId },
+    });
+
+    if (!existing) {
+      throw new Error("Customer not found or access denied");
+    }
+
+    const updated = await prisma.customer.update({
+      where: { id: customerId },
+      data: {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.companyName !== undefined ? { companyName: input.companyName } : {}),
+        ...(input.customerType !== undefined ? { customerType: input.customerType } : {}),
+        ...(input.email !== undefined ? { email: input.email } : {}),
+        ...(input.phone !== undefined ? { phone: input.phone } : {}),
+        ...(input.alternatePhone !== undefined ? { alternatePhone: input.alternatePhone } : {}),
+        ...(input.billingAddress !== undefined
+          ? { billingAddress: input.billingAddress ? (input.billingAddress as Prisma.InputJsonValue) : Prisma.JsonNull }
+          : {}),
+        ...(input.siteAddress !== undefined
+          ? { siteAddress: input.siteAddress ? (input.siteAddress as Prisma.InputJsonValue) : Prisma.JsonNull }
+          : {}),
+        ...(input.taxIdentifier !== undefined ? { taxIdentifier: input.taxIdentifier } : {}),
+        ...(input.assignedToId !== undefined ? { assignedToId: input.assignedToId } : {}),
+        ...(input.notes !== undefined ? { notes: input.notes } : {}),
+      },
+    });
+
+    await logAuditEvent({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "UPDATE",
+      entityType: "Customer",
+      entityId: customerId,
+      metadata: { name: updated.name },
+    });
+
+    return updated;
   }
 
   static async listCustomers(
