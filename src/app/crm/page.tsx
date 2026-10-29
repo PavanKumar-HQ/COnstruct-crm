@@ -218,10 +218,18 @@ export default function CRMApp() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/leads?search=${encodeURIComponent(search)}`);
+      let res = await fetch(`/api/leads?search=${encodeURIComponent(search)}`);
+      if (!res.ok && res.status === 401) {
+        // Auto-bootstrap demo session if unauthorized in development
+        const authRes = await fetch("/api/auth/demo-session", { method: "POST" });
+        if (authRes.ok) {
+          res = await fetch(`/api/leads?search=${encodeURIComponent(search)}`);
+        }
+      }
+
       if (!res.ok) {
         if (res.status === 401) {
-          setError("Session required: Log in to view live organization data");
+          setError("Session required: Click 'Demo Quick Login' below or in the sidebar to authenticate.");
           setLeads([]);
           return;
         }
@@ -258,7 +266,13 @@ export default function CRMApp() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/customers?search=${encodeURIComponent(search)}`);
+      let res = await fetch(`/api/customers?search=${encodeURIComponent(search)}`);
+      if (!res.ok && res.status === 401) {
+        const authRes = await fetch("/api/auth/demo-session", { method: "POST" });
+        if (authRes.ok) {
+          res = await fetch(`/api/customers?search=${encodeURIComponent(search)}`);
+        }
+      }
       if (!res.ok) {
         if (res.status === 401) {
           setError("Session required: Log in to view live organization data");
@@ -291,7 +305,13 @@ export default function CRMApp() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/estimates?search=${encodeURIComponent(search)}`);
+      let res = await fetch(`/api/estimates?search=${encodeURIComponent(search)}`);
+      if (!res.ok && res.status === 401) {
+        const authRes = await fetch("/api/auth/demo-session", { method: "POST" });
+        if (authRes.ok) {
+          res = await fetch(`/api/estimates?search=${encodeURIComponent(search)}`);
+        }
+      }
       if (!res.ok) {
         if (res.status === 401) {
           setError("Session required");
@@ -633,6 +653,13 @@ export default function CRMApp() {
         </div>
 
         <nav className="p-4 space-y-1.5 flex-1">
+          <a
+            href="/dashboard"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800/60 hover:text-white"
+          >
+            <Building2 className="w-4 h-4 text-indigo-400" />
+            <span>&larr; Executive Dashboard</span>
+          </a>
           <button
             onClick={() => { setActiveTab("leads"); setActiveLeadDetail(null); setActiveCustomerDetail(null); setActiveEstimateDetail(null); }}
             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors ${
@@ -651,6 +678,13 @@ export default function CRMApp() {
             <FileSpreadsheet className="w-4 h-4 text-amber-400" />
             <span>BOQ & Estimates</span>
           </button>
+          <a
+            href="/quotations"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800/60 hover:text-white"
+          >
+            <FileText className="w-4 h-4 text-blue-400" />
+            <span>Formal Quotations</span>
+          </a>
           <button
             onClick={() => { setActiveTab("customers"); setActiveLeadDetail(null); setActiveCustomerDetail(null); setActiveEstimateDetail(null); }}
             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors ${
@@ -671,12 +705,23 @@ export default function CRMApp() {
           </button>
         </nav>
 
-        <div className="p-4 border-t border-slate-800 text-xs text-slate-500">
+        <div className="p-4 border-t border-slate-800 text-xs text-slate-400">
+          <button
+            onClick={async () => {
+              const res = await fetch("/api/auth/demo-session", { method: "POST" });
+              if (res.ok) {
+                window.location.reload();
+              }
+            }}
+            className="w-full mb-3 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium text-xs text-center transition shadow-xs"
+          >
+            Sync Demo Session
+          </button>
           <div className="flex items-center gap-2 mb-1 text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>Phase 3.1 BOQ Engine Active</span>
+            <span>Phase 3.2 Operations Engine</span>
           </div>
-          <p>Database: PostgreSQL 18 Live</p>
+          <p>Database: PostgreSQL 18 Local</p>
         </div>
       </aside>
 
