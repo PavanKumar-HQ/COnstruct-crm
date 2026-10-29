@@ -16,6 +16,8 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",
+    "db:seed:demo": "npx tsx src/scripts/seed-demo.ts",
+    "db:verify:demo": "npx tsx src/scripts/verify-demo.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

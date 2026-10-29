@@ -46,15 +46,22 @@ export default function HomePage() {
       <div className="p-6 bg-slate-100 rounded-xl border border-slate-200 text-center">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
           <a
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 transition-colors shadow-sm"
+          >
+            Launch Executive Dashboard
+            <span aria-hidden="true">&rarr;</span>
+          </a>
+          <a
             href="/crm"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-lg font-medium text-sm hover:bg-slate-800 transition-colors shadow-sm"
           >
-            Launch Operations Console
+            Commercial CRM & Pipeline
             <span aria-hidden="true">&rarr;</span>
           </a>
         </div>
         <p className="text-xs text-slate-500 font-mono">
-          Phase 1-3 Active • Local PostgreSQL 18 Local / Isolated Test DB Verified
+          Phase 1-3 Active • Local PostgreSQL 18 Local / Isolated Demo Tenant Verified
         </p>
       </div>
     </main>
