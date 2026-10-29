@@ -2,6 +2,9 @@ import { PrismaClient } from "@prisma/client";
 
 export async function cleanTestDatabase(prisma: PrismaClient) {
   // Ordered deletion respecting foreign key dependencies
+  await prisma.boqItem.deleteMany();
+  await prisma.estimateRevision.deleteMany();
+  await prisma.estimate.deleteMany();
   await prisma.attachment.deleteMany();
   await prisma.siteVisit.deleteMany();
   await prisma.activity.deleteMany();

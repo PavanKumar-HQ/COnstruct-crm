@@ -7,6 +7,7 @@ import { LeadService } from "@/services/lead.service";
 import { ActivityService } from "@/services/activity.service";
 import { SiteVisitService } from "@/services/site-visit.service";
 import { StorageService } from "@/lib/storage";
+import { cleanTestDatabase } from "./test-utils";
 
 const testPrisma = new PrismaClient({
   datasources: {
@@ -25,18 +26,7 @@ describe("Phase 2 CRM End-to-End Suite", () => {
   let sessionB: any;
 
   beforeAll(async () => {
-    // Clean test schema
-    await testPrisma.attachment.deleteMany();
-    await testPrisma.siteVisit.deleteMany();
-    await testPrisma.activity.deleteMany();
-    await testPrisma.lead.deleteMany();
-    await testPrisma.contact.deleteMany();
-    await testPrisma.customer.deleteMany();
-    await testPrisma.auditLog.deleteMany();
-    await testPrisma.membership.deleteMany();
-    await testPrisma.role.deleteMany();
-    await testPrisma.user.deleteMany();
-    await testPrisma.organization.deleteMany();
+    await cleanTestDatabase(testPrisma);
 
     // Create Org A
     const orgA = await testPrisma.organization.create({

@@ -37,6 +37,9 @@ model Organization {
   activities   Activity[]
   siteVisits   SiteVisit[]
   attachments  Attachment[]
+  estimates    Estimate[]
+  estimateRevisions EstimateRevision[]
+  boqItems     BoqItem[]
 
   @@map("organizations")
 }
@@ -65,6 +68,8 @@ model User {
   assignedVisits    SiteVisit[]   @relation("SiteVisitAssignee")
   createdVisits     SiteVisit[]   @relation("SiteVisitCreator")
   uploadedAttachments Attachment[]
+  createdEstimates  Estimate[]
+  createdRevisions  EstimateRevision[]
 
   @@map("users")
 }
@@ -186,6 +191,7 @@ model Customer {
   activities     Activity[]
   siteVisits     SiteVisit[]
   attachments    Attachment[]
+  estimates      Estimate[]
 
   @@index([organizationId, status])
   @@index([organizationId, email])
@@ -261,6 +267,7 @@ model Lead {
   activities          Activity[]
   siteVisits          SiteVisit[]
   attachments         Attachment[]
+  estimates           Estimate[]
 
   @@index([organizationId, status])
   @@index([organizationId, assignedToId])
@@ -372,4 +379,121 @@ model Attachment {
   @@index([organizationId, leadId])
   @@index([organizationId, customerId])
   @@map("attachments")
+}
+
+// -------------------------------------------------------------
+// MODULE C: ESTIMATION, REVISIONS & BOQ ENGINE (PHASE 3.1)
+// -------------------------------------------------------------
+
+enum EstimateStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  SUPERSEDED
+  REJECTED
+}
+
+enum BoqCategory {
+  EXCAVATION
+  SUBSTRUCTURE
+  SUPERSTRUCTURE_RCC
+  MASONRY_PLASTER
+  WATERPROOFING
+  FLOORING_FINISHING
+  DOORS_WINDOWS
+  PAINTING
+  PLUMBING_SANITARY
+  ELECTRICAL_HVAC
+  EXTERNAL_WORKS
+  MISCELLANEOUS
+}
+
+model Estimate {
+  id             String           @id @default(uuid())
+  organizationId String
+  estimateNumber String           // E.g. "EST-2026-0001"
+  title          String           // E.g. "Comprehensive Structural & Finishing BOQ"
+  leadId         String?
+  customerId     String?
+  createdById    String
+  currentVersion Int              @default(1)
+  status         EstimateStatus   @default(DRAFT)
+  notes          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  lead           Lead?            @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  customer       Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy      User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  revisions      EstimateRevision[]
+
+  @@unique([organizationId, estimateNumber])
+  @@index([organizationId, leadId])
+  @@index([organizationId, customerId])
+  @@map("estimates")
+}
+
+model EstimateRevision {
+  id                   String           @id @default(uuid())
+  organizationId       String
+  estimateId           String
+  versionNumber        Int              // 1, 2, 3...
+  status               EstimateStatus   @default(DRAFT)
+  createdById          String
+
+  // Financial Metrics (Calculated Server-side via decimal.js)
+  totalCost            Decimal          @default(0) @db.Decimal(15, 2)
+  markupPercentage     Decimal          @default(15.00) @db.Decimal(5, 2) // Overhead & Profit markup %
+  sellingPricePreTax   Decimal          @default(0) @db.Decimal(15, 2)
+  taxPercentage        Decimal          @default(18.00) @db.Decimal(5, 2) // GST / Tax %
+  taxAmount            Decimal          @default(0) @db.Decimal(15, 2)
+  totalAmount          Decimal          @default(0) @db.Decimal(15, 2)
+  estimatedMargin      Decimal          @default(0) @db.Decimal(5, 2) // Calculated profit margin %
+
+  approvedAt           DateTime?
+  notes                String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  organization         Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  estimate             Estimate         @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  createdBy            User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  items                BoqItem[]
+
+  @@unique([estimateId, versionNumber])
+  @@index([organizationId, estimateId])
+  @@map("estimate_revisions")
+}
+
+model BoqItem {
+  id                   String           @id @default(uuid())
+  organizationId       String
+  revisionId           String
+  itemCode             String           // E.g. "CIVIL-01", "RCC-M25-01"
+  category             BoqCategory      @default(SUPERSTRUCTURE_RCC)
+  description          String           // Detailed scope of work
+  unit                 String           // "cu.m", "sq.m", "MT", "running m", "nos"
+  quantity             Decimal          @db.Decimal(12, 3)
+
+  // Cost Analysis Breakdown
+  materialRate         Decimal          @default(0) @db.Decimal(12, 2)
+  labourRate           Decimal          @default(0) @db.Decimal(12, 2)
+  equipmentRate        Decimal          @default(0) @db.Decimal(12, 2)
+  subcontractRate      Decimal          @default(0) @db.Decimal(12, 2)
+
+  unitCostRate         Decimal          @db.Decimal(12, 2) // material + labour + equipment + subcontract
+  totalCost            Decimal          @db.Decimal(15, 2) // quantity * unitCostRate
+  sellingRate          Decimal          @db.Decimal(12, 2) // unitCostRate * (1 + markup)
+  totalSellingPrice    Decimal          @db.Decimal(15, 2) // quantity * sellingRate
+
+  sortOrder            Int              @default(0)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  organization         Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  revision             EstimateRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, revisionId])
+  @@map("boq_items")
 }
