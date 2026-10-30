@@ -113,4 +113,21 @@ export class ActivityService {
       },
     });
   }
+
+  static async listActivities(session: SessionPayload) {
+    assertTenantAccess(session, session.organizationId);
+    assertPermission(session, PERMISSIONS.LEADS_READ);
+
+    return prisma.activity.findMany({
+      where: {
+        organizationId: session.organizationId,
+      },
+      orderBy: { dueDate: "asc" },
+      include: {
+        lead: { select: { id: true, title: true } },
+        customer: { select: { id: true, name: true } },
+        assignedTo: { select: { id: true, fullName: true, email: true } },
+      },
+    });
+  }
 }

@@ -42,6 +42,11 @@ model Organization {
   boqItems          BoqItem[]
   quotations        Quotation[]
   quotationRevisions QuotationRevision[]
+  contracts         Contract[]
+  changeOrders      ChangeOrder[]
+  projects          Project[]
+  workPackages      WorkPackage[]
+  projectMilestones ProjectMilestone[]
 
   @@map("organizations")
 }
@@ -74,6 +79,10 @@ model User {
   createdRevisions  EstimateRevision[]
   createdQuotations Quotation[]
   createdQuotationRevisions QuotationRevision[]
+  createdContracts  Contract[]
+  createdChangeOrders ChangeOrder[]   @relation("ChangeOrderCreator")
+  approvedChangeOrders ChangeOrder[]  @relation("ChangeOrderApprover")
+  managedProjects   Project[]         @relation("ProjectManager")
 
   @@map("users")
 }
@@ -199,6 +208,8 @@ model Customer {
   attachments    Attachment[]
   estimates      Estimate[]
   quotations     Quotation[]
+  contracts      Contract[]
+  projects       Project[]
 
   @@index([organizationId, status])
   @@index([organizationId, email])
@@ -543,6 +554,7 @@ model Quotation {
   customer        Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
   createdBy       User               @relation(fields: [createdById], references: [id], onDelete: Restrict)
   revisions       QuotationRevision[]
+  contracts       Contract[]
 
   @@unique([organizationId, quotationNumber])
   @@index([organizationId, leadId])
@@ -577,8 +589,207 @@ model QuotationRevision {
   quotation            Quotation        @relation(fields: [quotationId], references: [id], onDelete: Cascade)
   estimateRevision     EstimateRevision @relation(fields: [estimateRevisionId], references: [id], onDelete: Restrict)
   createdBy            User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  contracts            Contract[]
 
   @@unique([quotationId, versionNumber])
   @@index([organizationId, quotationId])
   @@map("quotation_revisions")
+}
+
+// -------------------------------------------------------------
+// MODULE E: CONTRACTS, CHANGE ORDERS & PROJECTS (INCREMENT 1)
+// -------------------------------------------------------------
+
+enum ContractStatus {
+  DRAFT
+  PENDING_SIGNATURE
+  EXECUTED
+  AMENDED
+  COMPLETED
+  TERMINATED
+}
+
+model Contract {
+  id                    String            @id @default(uuid())
+  organizationId        String
+  contractNumber        String            // E.g. "CTR-2026-0001"
+  title                 String
+  quotationId           String?
+  quotationRevisionId   String?
+  customerId            String
+  createdById           String
+  status                ContractStatus    @default(DRAFT)
+  
+  // Frozen baseline monetary values
+  baselineAmount        Decimal           @db.Decimal(15, 2) // Pre-tax baseline
+  taxAmount             Decimal           @db.Decimal(15, 2)
+  totalContractValue    Decimal           @db.Decimal(15, 2) // Original signed value
+  revisedContractValue  Decimal           @db.Decimal(15, 2) // Baseline + Approved Change Orders
+  
+  // Commercial terms
+  retentionPercentage   Decimal           @default(5.00) @db.Decimal(5, 2)
+  advancePercentage     Decimal           @default(10.00) @db.Decimal(5, 2)
+  startDate             DateTime?
+  completionDate        DateTime?
+  paymentTerms          String?
+  scopeOfWork           String?
+  executedAt            DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  quotation             Quotation?        @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  quotationRevision     QuotationRevision? @relation(fields: [quotationRevisionId], references: [id], onDelete: SetNull)
+  customer              Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  createdBy             User              @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  
+  changeOrders          ChangeOrder[]
+  projects              Project[]
+
+  @@unique([organizationId, contractNumber])
+  @@index([organizationId, customerId])
+  @@index([organizationId, quotationId])
+  @@map("contracts")
+}
+
+enum ChangeOrderStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model ChangeOrder {
+  id                    String            @id @default(uuid())
+  organizationId        String
+  changeOrderNumber     String            // E.g. "CO-2026-0001"
+  contractId            String
+  title                 String
+  description           String
+  justification         String?
+  
+  // Monetary changes (supports additions or omissions)
+  amount                Decimal           @db.Decimal(15, 2)
+  taxAmount             Decimal           @default(0) @db.Decimal(15, 2)
+  totalAmount           Decimal           @db.Decimal(15, 2)
+  timeExtensionDays     Int               @default(0)
+  
+  status                ChangeOrderStatus @default(DRAFT)
+  supportingDocsUrl     String?
+  
+  createdById           String
+  approvedById          String?
+  approvedAt            DateTime?
+  rejectionReason       String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  contract              Contract          @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  createdBy             User              @relation("ChangeOrderCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy            User?             @relation("ChangeOrderApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@unique([contractId, changeOrderNumber])
+  @@index([organizationId, contractId])
+  @@map("change_orders")
+}
+
+enum ProjectStatus {
+  PLANNING
+  MOBILISATION
+  IN_EXECUTION
+  PUNCH_LIST
+  HANDOVER
+  COMPLETED
+  SUSPENDED
+}
+
+enum ProjectHealth {
+  HEALTHY
+  AT_RISK
+  CRITICAL
+}
+
+model Project {
+  id                    String            @id @default(uuid())
+  organizationId        String
+  projectCode           String            // E.g. "PRJ-2026-0001"
+  name                  String
+  contractId            String            // Strict 1:1 or 1:N project-contract relationship
+  customerId            String
+  projectManagerId      String?
+  status                ProjectStatus     @default(MOBILISATION)
+  health                ProjectHealth     @default(HEALTHY)
+  
+  siteAddress           String?
+  plannedStartDate      DateTime?
+  targetCompletionDate  DateTime?
+  actualCompletionDate  DateTime?
+  
+  // Financial progress summary (in sync with contract and cost ledger)
+  budgetContractValue   Decimal           @db.Decimal(15, 2)
+  totalInvoicedValue    Decimal           @default(0) @db.Decimal(15, 2)
+  totalCostSpent        Decimal           @default(0) @db.Decimal(15, 2)
+  progressPercentage    Decimal           @default(0) @db.Decimal(5, 2)
+  
+  notes                 String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  contract              Contract          @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  customer              Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  projectManager        User?             @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: SetNull)
+  
+  workPackages          WorkPackage[]
+  milestones            ProjectMilestone[]
+
+  @@unique([organizationId, projectCode])
+  @@index([organizationId, contractId])
+  @@index([organizationId, customerId])
+  @@map("projects")
+}
+
+model WorkPackage {
+  id                    String            @id @default(uuid())
+  organizationId        String
+  projectId             String
+  code                  String            // E.g. "WP-CIVIL-01"
+  name                  String
+  description           String?
+  budgetAmount          Decimal           @db.Decimal(15, 2)
+  spentAmount           Decimal           @default(0) @db.Decimal(15, 2)
+  progressPercentage    Decimal           @default(0) @db.Decimal(5, 2)
+  status                String            @default("NOT_STARTED")
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project               Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, code])
+  @@index([organizationId, projectId])
+  @@map("work_packages")
+}
+
+model ProjectMilestone {
+  id                    String            @id @default(uuid())
+  organizationId        String
+  projectId             String
+  name                  String
+  description           String?
+  targetDate            DateTime
+  completedDate         DateTime?
+  isCompleted           Boolean           @default(false)
+  billingPercentage     Decimal?          @db.Decimal(5, 2)
+  billingAmount         Decimal?          @db.Decimal(15, 2)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project               Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, projectId])
+  @@map("project_milestones")
 }

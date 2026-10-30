@@ -17,44 +17,7 @@ import {
 } from "lucide-react";
 
 export default function InventoryPage() {
-  const materials = [
-    {
-      code: "MAT-CONC-M35",
-      name: "Ready-Mix Concrete (M35 Grade)",
-      category: "Concrete",
-      unit: "cu.m",
-      store: "Bellandur Site Batch Point",
-      stockQuantity: "120.00",
-      reorderLevel: "50.00",
-      avgUnitCost: "₹5,400",
-      totalValuation: "₹648,000",
-      status: "OPTIMAL",
-    },
-    {
-      code: "MAT-STEEL-550D",
-      name: "Tata Tiscon Fe550D Rebars (16mm/25mm)",
-      category: "Reinforcement Steel",
-      unit: "MT",
-      store: "Main Central Yard - Hoskote",
-      stockQuantity: "35.50",
-      reorderLevel: "15.00",
-      avgUnitCost: "₹61,500",
-      totalValuation: "₹2,183,250",
-      status: "OPTIMAL",
-    },
-    {
-      code: "MAT-PLY-18MM",
-      name: "Waterproof Shuttering Plywood 18mm",
-      category: "Formwork & Staging",
-      unit: "Sheets",
-      store: "Bellandur Tower 4 Basement Store",
-      stockQuantity: "12",
-      reorderLevel: "30",
-      avgUnitCost: "₹2,100",
-      totalValuation: "₹25,200",
-      status: "LOW_STOCK",
-    },
-  ];
+  const materials: any[] = [];
 
   return (
     <AppShell>
@@ -75,57 +38,64 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-          <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Material Stock Register
-            </span>
-            <span className="text-xs text-slate-500 font-mono">
-              Phase 5 Material Ledger
-            </span>
+        {materials.length === 0 ? (
+          <div className="liquid-glass-card rounded-2xl p-12 text-center border border-white/60">
+            <Package className="w-10 h-10 text-emerald-500 mx-auto mb-3 opacity-80" />
+            <h3 className="text-sm font-semibold text-slate-800">No Material Stock Recorded</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              Jobsite stores, material inventory valuations, and goods issue registers will populate here as physical inventory is received.
+            </p>
           </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+            <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Material Stock Register
+              </span>
+            </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
-                  <th className="py-3 px-4">Item Code</th>
-                  <th className="py-3 px-4">Material Name</th>
-                  <th className="py-3 px-4">Store Location</th>
-                  <th className="py-3 px-4">Stock on Hand</th>
-                  <th className="py-3 px-4">Unit Rate</th>
-                  <th className="py-3 px-4">Inventory Valuation</th>
-                  <th className="py-3 px-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {materials.map((m) => (
-                  <tr key={m.code} className="hover:bg-slate-50/60 transition">
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900">{m.code}</td>
-                    <td className="py-3 px-4 font-semibold text-slate-900">{m.name}</td>
-                    <td className="py-3 px-4 text-slate-600">{m.store}</td>
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                      {m.stockQuantity} {m.unit}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-slate-600">{m.avgUnitCost}</td>
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900">{m.totalValuation}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                          m.status === "LOW_STOCK"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-emerald-100 text-emerald-800"
-                        }`}
-                      >
-                        {m.status}
-                      </span>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
+                    <th className="py-3 px-4">Item Code</th>
+                    <th className="py-3 px-4">Material Name</th>
+                    <th className="py-3 px-4">Store Location</th>
+                    <th className="py-3 px-4">Stock on Hand</th>
+                    <th className="py-3 px-4">Unit Rate</th>
+                    <th className="py-3 px-4">Inventory Valuation</th>
+                    <th className="py-3 px-4">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {materials.map((m) => (
+                    <tr key={m.code} className="hover:bg-slate-50/60 transition">
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900">{m.code}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-900">{m.name}</td>
+                      <td className="py-3 px-4 text-slate-600">{m.store}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                        {m.stockQuantity} {m.unit}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-slate-600">{m.avgUnitCost}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900">{m.totalValuation}</td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                            m.status === "LOW_STOCK"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-emerald-100 text-emerald-800"
+                          }`}
+                        >
+                          {m.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </AppShell>
   );

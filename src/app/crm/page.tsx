@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { AppShell } from "@/components/layout/Shell";
 import {
   Users,
   Target,
@@ -27,7 +28,8 @@ import {
   Layers,
   Calculator,
   Percent,
-  TrendingUp
+  TrendingUp,
+  X
 } from "lucide-react";
 
 interface Lead {
@@ -221,7 +223,7 @@ export default function CRMApp() {
     try {
       let res = await fetch(`/api/leads?search=${encodeURIComponent(search)}`);
       if (!res.ok && res.status === 401) {
-        // Auto-bootstrap demo session if unauthorized in development
+        // Auto-bootstrap demo session if unauthorized
         const authRes = await fetch("/api/auth/demo-session", { method: "POST" });
         if (authRes.ok) {
           res = await fetch(`/api/leads?search=${encodeURIComponent(search)}`);
@@ -229,11 +231,6 @@ export default function CRMApp() {
       }
 
       if (!res.ok) {
-        if (res.status === 401) {
-          setError("Session required: Click 'Demo Quick Login' below or in the sidebar to authenticate.");
-          setLeads([]);
-          return;
-        }
         throw new Error("Failed to load leads from database");
       }
       const data = await res.json();
@@ -314,11 +311,7 @@ export default function CRMApp() {
         }
       }
       if (!res.ok) {
-        if (res.status === 401) {
-          setError("Session required");
-          return;
-        }
-        throw new Error("Failed to load estimates");
+        throw new Error("Failed to load estimates from database");
       }
       const data = await res.json();
       setEstimatesList(data || []);
@@ -339,6 +332,19 @@ export default function CRMApp() {
       setError(err.message);
     }
   };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "customers" || tabParam === "estimates" || tabParam === "leads") {
+        setActiveTab(tabParam);
+      } else if (tabParam === "new_lead") {
+        setActiveTab("leads");
+        setShowNewLeadModal(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (activeTab === "leads") {
@@ -640,118 +646,94 @@ export default function CRMApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800">
-        <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-          <div className="p-1.5 bg-blue-600 rounded text-white">
-            <Building2 className="w-5 h-5" />
+    <AppShell>
+      <div className="space-y-6 max-w-7xl mx-auto">
+        {/* Module Sub-Navigation Bar with Liquid Glass */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
+          <div className="flex items-center gap-2 p-1.5 liquid-glass-card rounded-2xl">
+            <button
+              onClick={() => { setActiveTab("leads"); setActiveLeadDetail(null); setActiveCustomerDetail(null); setActiveEstimateDetail(null); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                activeTab === "leads" && !activeCustomerDetail && !activeEstimateDetail
+                  ? "liquid-glass-button-primary text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+              }`}
+            >
+              <Target className="w-4 h-4" />
+              <span>Leads & Pipeline</span>
+            </button>
+            <button
+              onClick={() => { setActiveTab("customers"); setActiveLeadDetail(null); setActiveCustomerDetail(null); setActiveEstimateDetail(null); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                activeTab === "customers" && !activeCustomerDetail
+                  ? "liquid-glass-button-primary text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Customers & Accounts</span>
+            </button>
+            <button
+              onClick={() => { setActiveTab("estimates"); setActiveLeadDetail(null); setActiveCustomerDetail(null); setActiveEstimateDetail(null); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                activeTab === "estimates" && !activeEstimateDetail
+                  ? "liquid-glass-button-primary text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>BOQ & Estimates</span>
+            </button>
           </div>
-          <div>
-            <h2 className="text-sm font-semibold text-white tracking-wide">CONSTRUCT CRM</h2>
-            <p className="text-xs text-slate-400">Operations & BOQ</p>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowNewLeadModal(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 liquid-glass-button-primary text-white rounded-xl text-xs font-bold shadow-md transition"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Lead</span>
+            </button>
           </div>
         </div>
-
-        <nav className="p-4 space-y-1.5 flex-1">
-          <a
-            href="/dashboard"
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800/60 hover:text-white"
-          >
-            <Building2 className="w-4 h-4 text-indigo-400" />
-            <span>&larr; Executive Dashboard</span>
-          </a>
-          <button
-            onClick={() => { setActiveTab("leads"); setActiveLeadDetail(null); setActiveCustomerDetail(null); setActiveEstimateDetail(null); }}
-            className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors ${
-              activeTab === "leads" && !activeCustomerDetail && !activeEstimateDetail ? "bg-slate-800 text-white font-semibold" : "hover:bg-slate-800/60 text-slate-300"
-            }`}
-          >
-            <Target className="w-4 h-4 text-blue-400" />
-            <span>Leads & Pipeline</span>
-          </button>
-          <button
-            onClick={() => { setActiveTab("estimates"); setActiveLeadDetail(null); setActiveCustomerDetail(null); setActiveEstimateDetail(null); }}
-            className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors ${
-              activeTab === "estimates" && !activeEstimateDetail ? "bg-slate-800 text-white font-semibold" : "hover:bg-slate-800/60 text-slate-300"
-            }`}
-          >
-            <FileSpreadsheet className="w-4 h-4 text-amber-400" />
-            <span>BOQ & Estimates</span>
-          </button>
-          <a
-            href="/quotations"
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800/60 hover:text-white"
-          >
-            <FileText className="w-4 h-4 text-blue-400" />
-            <span>Formal Quotations</span>
-          </a>
-          <button
-            onClick={() => { setActiveTab("customers"); setActiveLeadDetail(null); setActiveCustomerDetail(null); setActiveEstimateDetail(null); }}
-            className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors ${
-              activeTab === "customers" ? "bg-slate-800 text-white font-semibold" : "hover:bg-slate-800/60 text-slate-300"
-            }`}
-          >
-            <Users className="w-4 h-4 text-emerald-400" />
-            <span>Customers & Accounts</span>
-          </button>
-          <button
-            onClick={() => setShowNewLeadModal(true)}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors hover:bg-slate-800/60 text-slate-300"
-          >
-            <Plus className="w-4 h-4 text-indigo-400" />
-            <span>Create New Lead</span>
-          </button>
-        </nav>
-
-        <div className="p-4 border-t border-slate-800 text-xs text-slate-400">
-          <button
-            onClick={async () => {
-              const res = await fetch("/api/auth/demo-session", { method: "POST" });
-              if (res.ok) {
-                window.location.reload();
-              }
-            }}
-            className="w-full mb-3 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium text-xs text-center transition shadow-xs"
-          >
-            Sync Demo Session
-          </button>
-          <div className="flex items-center gap-2 mb-1 text-slate-400">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>Phase 3.2 Operations Engine</span>
-          </div>
-          <p>Database: PostgreSQL 18 Local</p>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="flex-1 p-8 overflow-auto">
         {/* Feedback banners */}
         {error && (
-          <div className="mb-6 p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-lg flex items-center gap-3 text-sm">
+          <div className="mb-6 p-4 bg-rose-500/15 border border-rose-500/30 text-rose-900 rounded-2xl flex items-center gap-3 text-xs backdrop-blur-md">
             <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
-            <span>{error}</span>
+            <span className="font-medium">{error}</span>
           </div>
         )}
         {successMsg && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg flex items-center gap-3 text-sm">
+          <div className="mb-6 p-4 bg-emerald-500/15 border border-emerald-500/30 text-emerald-900 rounded-2xl flex items-center gap-3 text-xs backdrop-blur-md">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <span>{successMsg}</span>
+            <span className="font-medium">{successMsg}</span>
           </div>
         )}
 
-        {/* 1. ESTIMATE DETAIL & REVISION VIEW */}
+        {/* 1. ESTIMATE & BOQ DETAIL MODAL POPUP */}
         {activeEstimateDetail && (
-          <div>
-            <button
-              onClick={() => setActiveEstimateDetail(null)}
-              className="inline-flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-800 mb-4 transition"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Estimates List</span>
-            </button>
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 z-50 overflow-y-auto">
+            <div className="liquid-glass-card rounded-3xl shadow-2xl border border-white/80 max-w-5xl w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-200/60 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-amber-500/10 text-amber-700 rounded-xl border border-amber-500/20">
+                    <FileSpreadsheet className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-extrabold text-slate-900 leading-tight">BOQ & Commercial Estimate Console</h2>
+                    <p className="text-xs text-slate-500">Exact decimal rate analysis and baseline revision stack</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveEstimateDetail(null)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-white/60 transition"
+                  title="Close popup"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-            <header className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <header className="liquid-glass-subtle rounded-2xl border border-white/80 p-6 shadow-xs mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-1">
                   <h1 className="text-xl font-bold text-slate-900">{activeEstimateDetail.title}</h1>
@@ -837,11 +819,12 @@ export default function CRMApp() {
                 </div>
               ))}
             </div>
+            </div>
           </div>
         )}
 
         {/* 2. ESTIMATES LIST TAB */}
-        {activeTab === "estimates" && !activeEstimateDetail && (
+        {activeTab === "estimates" && (
           <div>
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div>
@@ -861,59 +844,60 @@ export default function CRMApp() {
             </header>
 
             {loading ? (
-              <div className="p-12 text-center text-sm text-slate-500 bg-white rounded-xl border border-slate-200">
+              <div className="p-12 text-center text-sm text-slate-500 liquid-glass-card rounded-2xl border border-white/60">
                 Querying database records...
               </div>
             ) : estimatesList.length === 0 ? (
-              <div className="p-12 text-center bg-white rounded-xl border border-slate-200">
-                <FileSpreadsheet className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-base font-medium text-slate-800">No Estimates Created Yet</h3>
+              <div className="p-12 text-center liquid-glass-card rounded-2xl border border-white/60">
+                <FileSpreadsheet className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                <h3 className="text-base font-bold text-slate-800">No Estimates Created Yet</h3>
                 <p className="text-sm text-slate-500 max-w-sm mx-auto mt-1">
                   Open any Lead from the Leads Pipeline and click &ldquo;Generate BOQ Estimate&rdquo;.
                 </p>
               </div>
             ) : (
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="liquid-glass-card rounded-2xl border border-white/70 overflow-hidden shadow-xs">
                 <table className="w-full text-left text-sm text-slate-600">
-                  <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 text-xs uppercase tracking-wider">
+                  <thead className="bg-white/40 text-slate-700 font-bold border-b border-slate-200/60 text-xs uppercase tracking-wider backdrop-blur-md">
                     <tr>
-                      <th className="px-6 py-3">Estimate Number</th>
-                      <th className="px-6 py-3">Title / Scope</th>
-                      <th className="px-6 py-3">Associated Account</th>
-                      <th className="px-6 py-3">Status</th>
-                      <th className="px-6 py-3">Latest Value</th>
-                      <th className="px-6 py-3">Action</th>
+                      <th className="px-6 py-3.5">Estimate Number</th>
+                      <th className="px-6 py-3.5">Title / Scope</th>
+                      <th className="px-6 py-3.5">Associated Account</th>
+                      <th className="px-6 py-3.5">Status</th>
+                      <th className="px-6 py-3.5">Latest Value</th>
+                      <th className="px-6 py-3.5">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-200/40">
                     {estimatesList.map((est) => (
-                      <tr key={est.id} className="hover:bg-slate-50/60 transition">
-                        <td className="px-6 py-4 font-mono font-medium text-blue-600">
+                      <tr key={est.id} className="hover:bg-white/60 transition">
+                        <td className="px-6 py-4 font-mono font-bold text-indigo-600">
                           {est.estimateNumber}
                         </td>
-                        <td className="px-6 py-4 font-medium text-slate-900">
+                        <td className="px-6 py-4 font-semibold text-slate-900">
                           <div>{est.title}</div>
                           <span className="text-xs text-slate-400 font-normal">v{est.currentVersion} latest</span>
                         </td>
-                        <td className="px-6 py-4 text-xs">
+                        <td className="px-6 py-4 text-xs font-medium">
                           {est.customer?.name || est.lead?.title || "—"}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            est.status === "APPROVED" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                            est.status === "APPROVED" ? "bg-emerald-500/15 text-emerald-800 border border-emerald-500/25" : "bg-amber-500/15 text-amber-800 border border-amber-500/25"
                           }`}>
                             {est.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 font-mono text-xs font-semibold text-slate-900">
+                        <td className="px-6 py-4 font-mono text-xs font-extrabold text-slate-900">
                           {est.revisions?.[0]?.totalAmount ? `₹${parseFloat(est.revisions[0].totalAmount).toLocaleString()}` : "—"}
                         </td>
                         <td className="px-6 py-4">
                           <button
                             onClick={() => fetchEstimateDetail(est.id)}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 liquid-glass-card rounded-xl text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:bg-white border border-indigo-200/60 shadow-xs transition"
                           >
-                            View BOQ &rarr;
+                            <span>View BOQ</span>
+                            <ChevronRight className="w-3.5 h-3.5 text-indigo-500" />
                           </button>
                         </td>
                       </tr>
@@ -925,18 +909,30 @@ export default function CRMApp() {
           </div>
         )}
 
-        {/* 3. LEAD DETAIL VIEW */}
-        {activeLeadDetail && !activeEstimateDetail && (
-          <div>
-            <button
-              onClick={() => setActiveLeadDetail(null)}
-              className="inline-flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-800 mb-4 transition"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Leads List</span>
-            </button>
+        {/* 3. LEAD DETAIL MODAL POPUP */}
+        {activeLeadDetail && (
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <div className="liquid-glass-card rounded-3xl shadow-2xl border border-white/80 max-w-5xl w-full max-h-[92vh] overflow-y-auto p-6 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-200/60 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-indigo-500/10 text-indigo-700 rounded-xl border border-indigo-500/20">
+                    <Target className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-extrabold text-slate-900 leading-tight">Opportunity Detail Console</h2>
+                    <p className="text-xs text-slate-500">Live operational & inspection records for this opportunity</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveLeadDetail(null)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-white/60 transition"
+                  title="Close popup"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-            <header className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <header className="liquid-glass-subtle rounded-2xl border border-white/80 p-6 shadow-xs mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-1">
                   <h1 className="text-xl font-bold text-slate-900">{activeLeadDetail.title}</h1>
@@ -1132,11 +1128,12 @@ export default function CRMApp() {
                 )}
               </div>
             </div>
+            </div>
           </div>
         )}
 
         {/* 4. MAIN LEADS TABLE TAB */}
-        {activeTab === "leads" && !activeLeadDetail && !activeCustomerDetail && !activeEstimateDetail && (
+        {activeTab === "leads" && !activeEstimateDetail && (
           <div>
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div>
@@ -1154,13 +1151,6 @@ export default function CRMApp() {
                     className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <button
-                  onClick={() => setShowNewLeadModal(true)}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>New Lead</span>
-                </button>
               </div>
             </header>
 
@@ -1194,15 +1184,15 @@ export default function CRMApp() {
                         <td className="px-6 py-4 font-medium text-slate-900">
                           <button
                             onClick={() => fetchLeadDetail(lead.id)}
-                            className="text-left hover:text-blue-600 hover:underline"
+                            className="text-left hover:text-blue-600 hover:underline block"
                           >
-                            <div>{lead.title}</div>
+                            <div className="font-semibold text-slate-900">{lead.title}</div>
                           </button>
-                          <span className="text-xs text-slate-400 font-normal">{lead.source}</span>
+                          <div className="text-xs text-slate-400 font-normal mt-0.5">{lead.source}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <div>{lead.contactName || "—"}</div>
-                          <div className="text-xs text-slate-400">{lead.contactPhone || lead.contactEmail || "No contact info"}</div>
+                          <div className="font-medium text-slate-800">{lead.contactName || "—"}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">{lead.contactPhone || lead.contactEmail || "No contact info"}</div>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -1213,15 +1203,16 @@ export default function CRMApp() {
                             {lead.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 font-mono text-xs">
+                        <td className="px-6 py-4 font-mono text-xs font-semibold text-slate-900">
                           {lead.estimatedBudget ? `₹${parseFloat(lead.estimatedBudget).toLocaleString()}` : "Not estimated"}
                         </td>
-                        <td className="px-6 py-4 space-x-2">
+                        <td className="px-6 py-4">
                           <button
                             onClick={() => fetchLeadDetail(lead.id)}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 liquid-glass-card rounded-xl text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:bg-white border border-indigo-200/60 shadow-xs transition"
                           >
-                            Manage Lead &rarr;
+                            <span>Manage Lead</span>
+                            <ChevronRight className="w-3.5 h-3.5 text-indigo-500" />
                           </button>
                         </td>
                       </tr>
@@ -1300,9 +1291,10 @@ export default function CRMApp() {
                         <td className="px-6 py-4">
                           <button
                             onClick={() => fetchCustomerDetail(c.id)}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 liquid-glass-card rounded-xl text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:bg-white border border-indigo-200/60 shadow-xs transition"
                           >
-                            View Account &rarr;
+                            <span>View Account</span>
+                            <ChevronRight className="w-3.5 h-3.5 text-indigo-500" />
                           </button>
                         </td>
                       </tr>
@@ -1316,16 +1308,32 @@ export default function CRMApp() {
 
         {/* MODAL: IN-PLACE CREATE LEAD */}
         {showNewLeadModal && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl border border-slate-200 max-w-2xl w-full p-6 max-h-[90vh] overflow-auto">
-              <h2 className="text-lg font-semibold text-slate-900 mb-1">Create Construction Opportunity</h2>
-              <p className="text-xs text-slate-500 mb-4">Capture enquiry details directly into the live CRM database.</p>
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
+            <div className="liquid-glass-card rounded-3xl shadow-2xl border border-white/80 max-w-2xl w-full p-6 max-h-[90vh] overflow-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/60 mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 liquid-glass-button-primary text-white rounded-xl shadow-md">
+                    <Target className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-extrabold text-slate-900 leading-tight">Create Construction Opportunity</h2>
+                    <p className="text-xs text-slate-500">Capture enquiry details directly into the live CRM database.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowNewLeadModal(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-white/60 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
               <form onSubmit={async (e) => {
                 await handleCreateLead(e);
                 setShowNewLeadModal(false);
               }} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Project Title <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -1334,17 +1342,17 @@ export default function CRMApp() {
                     value={newLeadForm.title}
                     onChange={(e) => setNewLeadForm({ ...newLeadForm, title: e.target.value })}
                     placeholder="e.g. Industrial Shed Construction"
-                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
+                    className="w-full p-2.5 liquid-glass-input rounded-xl text-sm font-medium text-slate-900"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Source</label>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Source</label>
                     <select
                       value={newLeadForm.source}
                       onChange={(e) => setNewLeadForm({ ...newLeadForm, source: e.target.value })}
-                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white"
+                      className="w-full p-2.5 liquid-glass-input rounded-xl text-sm font-medium text-slate-900"
                     >
                       <option value="Direct Referral">Direct Referral</option>
                       <option value="Website Enquiry">Website Enquiry</option>
@@ -1352,11 +1360,11 @@ export default function CRMApp() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Priority</label>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Priority</label>
                     <select
                       value={newLeadForm.priority}
                       onChange={(e) => setNewLeadForm({ ...newLeadForm, priority: e.target.value })}
-                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white"
+                      className="w-full p-2.5 liquid-glass-input rounded-xl text-sm font-medium text-slate-900"
                     >
                       <option value="LOW">Low</option>
                       <option value="MEDIUM">Medium</option>
@@ -1368,58 +1376,58 @@ export default function CRMApp() {
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Contact Name</label>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Contact Name</label>
                     <input
                       type="text"
                       value={newLeadForm.contactName}
                       onChange={(e) => setNewLeadForm({ ...newLeadForm, contactName: e.target.value })}
-                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
+                      className="w-full p-2.5 liquid-glass-input rounded-xl text-sm font-medium text-slate-900"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Phone</label>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Phone</label>
                     <input
                       type="text"
                       value={newLeadForm.contactPhone}
                       onChange={(e) => setNewLeadForm({ ...newLeadForm, contactPhone: e.target.value })}
-                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
+                      className="w-full p-2.5 liquid-glass-input rounded-xl text-sm font-medium text-slate-900"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Budget (₹)</label>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Budget (₹)</label>
                     <input
                       type="number"
                       value={newLeadForm.estimatedBudget}
                       onChange={(e) => setNewLeadForm({ ...newLeadForm, estimatedBudget: e.target.value })}
-                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
+                      className="w-full p-2.5 liquid-glass-input rounded-xl text-sm font-mono font-bold text-slate-900"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Site Address</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Site Address</label>
                   <input
                     type="text"
                     value={newLeadForm.siteAddress}
                     onChange={(e) => setNewLeadForm({ ...newLeadForm, siteAddress: e.target.value })}
-                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
+                    className="w-full p-2.5 liquid-glass-input rounded-xl text-sm font-medium text-slate-900"
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200/60">
                   <button
                     type="button"
                     onClick={() => setShowNewLeadModal(false)}
-                    className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+                    className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 liquid-glass-subtle rounded-xl transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={actionLoading}
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                    className="px-6 py-2 liquid-glass-button-primary text-white rounded-xl text-xs font-bold transition shadow-md"
                   >
-                    {actionLoading ? "Saving..." : "Create Lead"}
+                    {actionLoading ? "Saving..." : "Create Opportunity"}
                   </button>
                 </div>
               </form>
@@ -1610,7 +1618,312 @@ export default function CRMApp() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+
+        {/* MODAL: STATUS UPDATE */}
+        {showStatusModal && activeLeadDetail && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-slate-900">
+                  Update Pipeline Status
+                </h3>
+                <button onClick={() => setShowStatusModal(false)} className="text-slate-400 hover:text-slate-700">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">Enforces status transition rules and preserves immutable audit trail.</p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Target Status</label>
+                  <select
+                    value={statusUpdate}
+                    onChange={(e) => setStatusUpdate(e.target.value)}
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="NEW">NEW</option>
+                    <option value="QUALIFIED">QUALIFIED</option>
+                    <option value="SITE_VISIT_SCHEDULED">SITE_VISIT_SCHEDULED</option>
+                    <option value="SITE_VISIT_COMPLETED">SITE_VISIT_COMPLETED</option>
+                    <option value="ESTIMATION">ESTIMATION</option>
+                    <option value="QUOTATION_SENT">QUOTATION_SENT</option>
+                    <option value="NEGOTIATION">NEGOTIATION</option>
+                    <option value="WON">WON</option>
+                    <option value="LOST">LOST</option>
+                  </select>
+                </div>
+
+                {statusUpdate === "LOST" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Loss Reason <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={lossReason}
+                      onChange={(e) => setLossReason(e.target.value)}
+                      placeholder="e.g. Budget mismatch, competitor awarded"
+                      className="w-full p-2 border border-slate-300 rounded-lg text-xs"
+                    />
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                  <button
+                    onClick={() => setShowStatusModal(false)}
+                    className="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdateStatus}
+                    disabled={actionLoading}
+                    className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs"
+                  >
+                    {actionLoading ? "Updating..." : "Save Status"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: RECORD OUTCOME & MEASUREMENTS */}
+        {showOutcomeModal && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-slate-900">Record Site Inspection Outcome</h3>
+                <button onClick={() => setShowOutcomeModal(null)} className="text-slate-400 hover:text-slate-700">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">Captures verified physical plot measurements and terrain conditions.</p>
+
+              <form onSubmit={handleRecordVisitOutcome} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Inspection Outcome & Notes <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={outcomeData.outcomeNotes}
+                    onChange={(e) => setOutcomeData({ ...outcomeData, outcomeNotes: e.target.value })}
+                    placeholder="Ground level, soil condition, road accessibility observations..."
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-xs"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Plot Area (Sq. Ft)</label>
+                    <input
+                      type="number"
+                      value={outcomeData.plotAreaSqFt}
+                      onChange={(e) => setOutcomeData({ ...outcomeData, plotAreaSqFt: e.target.value })}
+                      placeholder="e.g. 2400"
+                      className="w-full p-2 border border-slate-300 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Road Width (Meters)</label>
+                    <input
+                      type="number"
+                      value={outcomeData.roadWidthMeters}
+                      onChange={(e) => setOutcomeData({ ...outcomeData, roadWidthMeters: e.target.value })}
+                      placeholder="e.g. 12"
+                      className="w-full p-2 border border-slate-300 rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowOutcomeModal(null)}
+                    className="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs"
+                  >
+                    {actionLoading ? "Saving..." : "Record & Complete Visit"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: ADD FOLLOW-UP TASK */}
+        {showActivityModal && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-slate-900">Create Follow-up Activity</h3>
+                <button onClick={() => setShowActivityModal(false)} className="text-slate-400 hover:text-slate-700">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">Assign follow-up tasks and deadlines to team members.</p>
+
+              <form onSubmit={handleCreateActivity} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Type</label>
+                    <select
+                      value={activityData.type}
+                      onChange={(e) => setActivityData({ ...activityData, type: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
+                    >
+                      <option value="CALL">Call</option>
+                      <option value="MEETING">Meeting</option>
+                      <option value="TASK">Task</option>
+                      <option value="NOTE">Note</option>
+                      <option value="EMAIL">Email</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Priority</label>
+                    <select
+                      value={activityData.priority}
+                      onChange={(e) => setActivityData({ ...activityData, priority: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
+                    >
+                      <option value="LOW">Low</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="HIGH">High</option>
+                      <option value="URGENT">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Subject <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={activityData.subject}
+                    onChange={(e) => setActivityData({ ...activityData, subject: e.target.value })}
+                    placeholder="e.g. Follow up on technical drawing revisions"
+                    className="w-full p-2 border border-slate-300 rounded-lg text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Due Date</label>
+                  <input
+                    type="datetime-local"
+                    value={activityData.dueDate}
+                    onChange={(e) => setActivityData({ ...activityData, dueDate: e.target.value })}
+                    className="w-full p-2 border border-slate-300 rounded-lg text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Description</label>
+                  <textarea
+                    rows={2}
+                    value={activityData.description}
+                    onChange={(e) => setActivityData({ ...activityData, description: e.target.value })}
+                    placeholder="Task details and instructions..."
+                    className="w-full p-2 border border-slate-300 rounded-lg text-xs"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowActivityModal(false)}
+                    className="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs"
+                  >
+                    {actionLoading ? "Saving..." : "Create Task"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: CUSTOMER DETAIL POPUP */}
+        {activeCustomerDetail && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-50 text-emerald-700 rounded-lg">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900 leading-tight">{activeCustomerDetail.name}</h2>
+                    {activeCustomerDetail.companyName && (
+                      <p className="text-xs text-slate-500">{activeCustomerDetail.companyName}</p>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveCustomerDetail(null)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                  title="Close popup"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 space-y-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Contact Details</h3>
+                  <div className="text-xs text-slate-700 space-y-1">
+                    <div><span className="text-slate-400">Email:</span> {activeCustomerDetail.email || "—"}</div>
+                    <div><span className="text-slate-400">Phone:</span> {activeCustomerDetail.phone || "—"}</div>
+                    <div><span className="text-slate-400">Status:</span> <span className="font-semibold text-emerald-700">{activeCustomerDetail.status}</span></div>
+                    <div><span className="text-slate-400">Notes:</span> {activeCustomerDetail.notes || "None"}</div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 space-y-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Linked Projects & Leads</h3>
+                  {!activeCustomerDetail.leads || activeCustomerDetail.leads.length === 0 ? (
+                    <div className="p-4 text-xs text-slate-400 text-center">No linked opportunities found.</div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                      {activeCustomerDetail.leads.map((l: any) => (
+                        <div key={l.id} className="p-2 bg-white rounded border border-slate-200 text-xs flex justify-between">
+                          <span className="font-medium text-slate-800">{l.title}</span>
+                          <span className="text-slate-500 font-mono text-[10px]">{l.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-5 border-t border-slate-100 mt-6">
+                <button
+                  onClick={() => setActiveCustomerDetail(null)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold"
+                >
+                  Close Account View
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </AppShell>
   );
 }

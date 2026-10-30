@@ -18,35 +18,7 @@ import {
 } from "lucide-react";
 
 export default function TreasuryPage() {
-  const accounts = [
-    {
-      id: "ACC-01",
-      name: "HDFC Current Operating Account",
-      type: "BANK",
-      accountNumber: "•••• •••• 9821",
-      balance: "₹18,450,200",
-      reconciledStatus: "RECONCILED",
-      lastActivity: "28 Oct 2026",
-    },
-    {
-      id: "ACC-02",
-      name: "ICICI Project Escrow (Bellandur Tower 4)",
-      type: "ESCROW",
-      accountNumber: "•••• •••• 4410",
-      balance: "₹12,800,000",
-      reconciledStatus: "RECONCILED",
-      lastActivity: "26 Oct 2026",
-    },
-    {
-      id: "ACC-03",
-      name: "Jobsite Petty Cash Fund (Imprest)",
-      type: "CASH",
-      accountNumber: "SITE-VAULT-01",
-      balance: "₹185,000",
-      reconciledStatus: "AUDITED",
-      lastActivity: "Today",
-    },
-  ];
+  const accounts: any[] = [];
 
   return (
     <AppShell>
@@ -67,78 +39,23 @@ export default function TreasuryPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Total Available Liquidity
-            </span>
-            <div className="text-2xl font-bold text-slate-900 mt-1">₹31,435,200</div>
-            <div className="text-[11px] text-slate-500 mt-1">Across 3 verified operational accounts</div>
+        {accounts.length === 0 ? (
+          <div className="liquid-glass-card rounded-2xl p-12 text-center border border-white/60">
+            <Wallet className="w-10 h-10 text-blue-500 mx-auto mb-3 opacity-80" />
+            <h3 className="text-sm font-semibold text-slate-800">No Bank or Treasury Accounts Configured</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              Operating current accounts, escrow funds, and jobsite cash vaults will be reported here once accounts are connected.
+            </p>
           </div>
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Projected Net Cash (30 Days)
-            </span>
-            <div className="text-2xl font-bold text-emerald-600 mt-1 flex items-center gap-1.5">
-              <ArrowUpRight className="w-6 h-6" />
-              +₹4,153,600
+        ) : (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+            <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Configured Bank & Cash Accounts
+              </span>
             </div>
-            <div className="text-[11px] text-slate-500 mt-1">Expected RA inflows minus supplier PO dues</div>
           </div>
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Restricted Escrow Balances
-            </span>
-            <div className="text-2xl font-bold text-slate-900 mt-1">₹12,800,000</div>
-            <div className="text-[11px] text-slate-500 mt-1">Dedicated client milestone drawdowns</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-          <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Configured Bank & Cash Accounts
-            </span>
-            <span className="text-xs text-slate-500 font-mono">
-              Phase 7 Treasury Ledger Integrity
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase tracking-wider font-semibold text-[11px]">
-                  <th className="py-3 px-4">Account Name</th>
-                  <th className="py-3 px-4">Type</th>
-                  <th className="py-3 px-4">Masked Identifier</th>
-                  <th className="py-3 px-4">Ledger Balance</th>
-                  <th className="py-3 px-4">Reconciliation</th>
-                  <th className="py-3 px-4">Last Activity</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {accounts.map((acc) => (
-                  <tr key={acc.id} className="hover:bg-slate-50/60 transition">
-                    <td className="py-3 px-4 font-semibold text-slate-900">{acc.name}</td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px]">
-                        {acc.type}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-mono text-slate-500">{acc.accountNumber}</td>
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900">{acc.balance}</td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                        {acc.reconciledStatus}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-500">{acc.lastActivity}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        )}
       </div>
     </AppShell>
   );

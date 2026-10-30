@@ -29,7 +29,8 @@ import {
   ExternalLink,
   Menu,
   X,
-  FileText
+  FileText,
+  ShieldCheck
 } from "lucide-react";
 
 interface NavItem {
@@ -63,8 +64,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       groupTitle: "Business Development",
       items: [
         { name: "CRM & Leads", href: "/crm", icon: Users, isImplemented: true },
-        { name: "Clients & Contacts", href: "/crm?tab=customers", icon: Building2, isImplemented: true },
-        { name: "Estimates & BOQ", href: "/crm?tab=estimates", icon: FileSpreadsheet, isImplemented: true },
         { name: "Formal Quotations", href: "/quotations", icon: FileCheck, isImplemented: true },
         { name: "Prime Contracts", href: "/contracts", icon: FileText, badge: "Live", isImplemented: true },
       ],
@@ -117,82 +116,103 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      {/* Mobile Top Header */}
-      <div className="md:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-indigo-600 rounded">
+    <div className="h-screen w-screen overflow-hidden liquid-bg flex flex-col md:flex-row text-slate-800">
+      {/* Mobile Top Header with Liquid Glass */}
+      <div className="md:hidden liquid-glass-dark text-white px-4 py-3 flex items-center justify-between border-b border-white/10 z-30 flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 liquid-glass-button-primary rounded-xl">
             <Building2 className="w-5 h-5 text-white" />
           </div>
-          <span className="font-bold text-sm tracking-tight">Construct OS</span>
+          <span className="font-semibold text-sm tracking-tight text-white/95">Construct OS</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-1 rounded text-slate-300 hover:text-white"
+          className="p-1.5 rounded-lg liquid-glass-subtle text-slate-200 hover:text-white"
         >
-          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
-      {/* Sidebar Navigation */}
+      {/* Backdrop for Mobile Menu */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-slate-950/60 backdrop-blur-md z-30 transition-opacity"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Navigation with Apple Liquid Glass Translucency */}
       <aside
         className={`${
-          mobileMenuOpen ? "block" : "hidden"
-        } md:block w-full md:w-64 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col border-r border-slate-800`}
+          mobileMenuOpen
+            ? "fixed inset-y-0 left-0 z-40 w-72 flex flex-col"
+            : "hidden"
+        } md:flex md:static md:w-64 md:h-full liquid-glass-sidebar text-slate-300 flex-shrink-0 flex-col z-20`}
       >
         {/* Brand / Tenant Header */}
-        <div className="p-4 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-600 rounded-lg text-white">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-white tracking-tight leading-tight">
-                Apex BuildTech
+        <div className="p-4 border-b border-white/10 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 liquid-glass-button-primary rounded-xl shadow-lg">
+                <Building2 className="w-5 h-5 text-white" />
               </div>
-              <div className="text-xs text-indigo-400 font-medium">Enterprise OS</div>
+              <div>
+                <div className="text-sm font-semibold text-white tracking-tight leading-tight">
+                  Apex BuildTech
+                </div>
+                <div className="text-[11px] text-indigo-300 font-medium tracking-wide">Enterprise OS</div>
+              </div>
             </div>
+            {mobileMenuOpen && (
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="md:hidden p-1 text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
-          {/* Demo Tenant Badge */}
-          <div className="mt-3 px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded flex items-center justify-between text-xs text-amber-300 font-medium">
+          {/* Active Organization Badge with Frosted Pill */}
+          <div className="mt-3 px-2.5 py-1.5 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between text-xs text-slate-300 font-medium backdrop-blur-md">
             <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              Demo Tenant Active
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse"></span>
+              <span className="text-[11px] text-slate-200">Live Organization</span>
             </span>
-            <span className="text-[10px] uppercase font-mono px-1 bg-amber-500/20 rounded">Dev</span>
+            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-md">Active</span>
           </div>
         </div>
 
-        {/* Navigation Group Items */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+        {/* Navigation Group Items (Dedicated Independent Scroll) */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-6">
           {navigationGroups.map((group) => (
             <div key={group.groupTitle}>
-              <div className="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+              <div className="px-3 text-[10px] font-bold text-slate-400/80 uppercase tracking-wider mb-2">
                 {group.groupTitle}
               </div>
-              <ul className="space-y-0.5">
+              <ul className="space-y-1">
                 {group.items.map((item) => {
-                  const isActive = pathname === item.href || (item.href.includes("?") && pathname === item.href.split("?")[0]);
+                  const isActive = pathname === item.href;
                   return (
                     <li key={item.name}>
                       <Link
                         href={item.href}
-                        className={`flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 ${
                           isActive
-                            ? "bg-indigo-600 text-white font-semibold"
-                            : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                            ? "bg-white/15 text-white font-semibold shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] border border-white/20 backdrop-blur-md"
+                            : "text-slate-300 hover:bg-white/10 hover:text-white border border-transparent"
                         }`}
                       >
                         <span className="flex items-center gap-2.5 truncate">
-                          <item.icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
+                          <item.icon className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-indigo-300" : "text-slate-400"}`} />
                           <span className="truncate">{item.name}</span>
                         </span>
                         {item.badge && (
                           <span
-                            className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+                            className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
                               item.badge === "Live"
-                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                                : "bg-slate-800 text-slate-400 border border-slate-700"
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.2)]"
+                                : "bg-white/10 text-slate-300 border border-white/15"
                             }`}
                           >
                             {item.badge}
@@ -207,15 +227,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </div>
 
-        {/* User / Session Switcher */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/60">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white">
+        {/* User / Session Switcher (Liquid Glass Footer) */}
+        <div className="p-3 border-t border-white/10 bg-slate-950/40 backdrop-blur-xl flex-shrink-0">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white shadow-md">
                 VM
               </div>
               <div className="text-left">
-                <div className="text-xs font-medium text-white">Vikram Malhotra</div>
+                <div className="text-xs font-semibold text-white/90">Vikram Malhotra</div>
                 <div className="text-[10px] text-slate-400">Managing Director</div>
               </div>
             </div>
@@ -223,20 +243,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             onClick={handleQuickDemoLogin}
             disabled={demoSwitching}
-            className="w-full text-center px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-[11px] font-medium border border-slate-700 transition flex items-center justify-center gap-1.5"
+            className="w-full text-center px-2 py-1.5 liquid-glass-subtle hover:bg-white/20 text-slate-200 rounded-xl text-[11px] font-medium border border-white/15 transition flex items-center justify-center gap-1.5 shadow-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            {demoSwitching ? "Syncing..." : "Sync Demo Session"}
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            {demoSwitching ? "Re-authorizing..." : "Active Session"}
           </button>
         </div>
       </aside>
 
-      {/* Main Content Viewport */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* Universal Top Bar */}
-        <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10 shadow-xs">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+      {/* Main Content Viewport with Separate Independent Scroll and Apple Liquid Glass Canopy */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50/60 backdrop-blur-3xl">
+        {/* Universal Liquid Top Bar */}
+        <header className="liquid-glass-header px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between flex-shrink-0 z-10">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider truncate">
               {pathname === "/dashboard"
                 ? "Executive Overview"
                 : pathname === "/pipeline"
@@ -265,29 +285,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 ? "My Work"
                 : "Operations Platform"}
             </span>
-            <span className="text-slate-300">/</span>
-            <span className="text-xs text-slate-700 font-mono">Branch: Bangalore HQ</span>
+            <span className="hidden sm:inline text-slate-400">/</span>
+            <span className="hidden sm:inline text-xs text-slate-500 font-mono">Bangalore HQ</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <Link
               href="/pipeline"
-              className="text-xs px-3 py-1.5 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-semibold transition flex items-center gap-1.5"
+              className="text-xs px-3 py-1.5 liquid-glass-subtle hover:bg-white/70 text-indigo-700 rounded-xl font-semibold transition flex items-center gap-1.5 border border-indigo-200/50 shadow-xs"
             >
-              <Kanban className="w-3.5 h-3.5" />
-              Executive Pipeline
+              <Kanban className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="hidden sm:inline">Executive Pipeline</span>
+              <span className="sm:hidden">Pipeline</span>
             </Link>
             <Link
               href="/crm"
-              className="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition"
+              className="text-xs px-3.5 py-1.5 liquid-glass-button-primary text-white rounded-xl font-medium transition"
             >
               + Quick Action
             </Link>
           </div>
         </header>
 
-        {/* Page Content Body */}
-        <main className="flex-1 p-6">{children}</main>
+        {/* Page Content Body (Independently Scrollable Container with Liquid Atmosphere) */}
+        <main className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 lg:p-8">
+          {children}
+        </main>
       </div>
     </div>
   );

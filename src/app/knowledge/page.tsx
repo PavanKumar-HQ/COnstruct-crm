@@ -18,38 +18,7 @@ import {
 } from "lucide-react";
 
 export default function KnowledgeBasePage() {
-  const articles = [
-    {
-      id: "KB-SOP-01",
-      title: "Mass Raft Concrete Pouring & Temperature Monitoring Protocol",
-      category: "Site Engineering SOP",
-      tags: ["Concrete", "M35/M40", "Thermal Cracking", "Curing"],
-      author: "Rajesh Kulkarni (Chief QS)",
-      version: "v2.1",
-      updatedAt: "24 Oct 2026",
-      status: "APPROVED",
-    },
-    {
-      id: "KB-SOP-02",
-      title: "Laser Screed Heavy-Duty Industrial Flooring FM2 Tolerances",
-      category: "Quality Assurance Standard",
-      tags: ["Flooring", "FM2", "Warehouse", "Surface Regularity"],
-      author: "Suresh Menon (Project Lead)",
-      version: "v1.4",
-      updatedAt: "19 Oct 2026",
-      status: "APPROVED",
-    },
-    {
-      id: "KB-LESSON-01",
-      title: "Lessons Learned: Deep Basement Dewatering in High Water-Table Zones",
-      category: "Project Post-Mortem",
-      tags: ["Substructure", "Wellpoint Dewatering", "Soil Stability"],
-      author: "Vikram Malhotra (MD)",
-      version: "v1.0",
-      updatedAt: "15 Oct 2026",
-      status: "APPROVED",
-    },
-  ];
+  const articles: any[] = [];
 
   return (
     <AppShell>
@@ -70,35 +39,23 @@ export default function KnowledgeBasePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {articles.map((art) => (
-            <div key={art.id} className="bg-white rounded-xl border border-slate-200 shadow-2xs p-5 flex flex-col justify-between space-y-3 hover:border-indigo-400 transition">
-              <div>
-                <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
-                  <span className="font-mono">{art.id} • {art.version}</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                    {art.status}
-                  </span>
-                </div>
-                <h3 className="text-xs font-bold text-slate-900 leading-snug">{art.title}</h3>
-                <div className="text-[11px] text-indigo-600 font-medium mt-1">{art.category}</div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {art.tags.map((t) => (
-                    <span key={t} className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px]">
-                      #{t}
-                    </span>
-                  ))}
-                </div>
+        {articles.length === 0 ? (
+          <div className="liquid-glass-card rounded-2xl p-12 text-center border border-white/60">
+            <BookOpen className="w-10 h-10 text-indigo-500 mx-auto mb-3 opacity-80" />
+            <h3 className="text-sm font-semibold text-slate-800">No Knowledge Base Articles Published</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              Centralized standard operating procedures (SOPs), concrete pour protocols, and compliance checklists will be published here.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {articles.map((art) => (
+              <div key={art.id} className="bg-white rounded-xl border border-slate-200 shadow-2xs p-5 flex flex-col justify-between space-y-3 hover:border-indigo-400 transition">
+                <div className="text-xs font-bold text-slate-900 leading-snug">{art.title}</div>
               </div>
-              <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>By {art.author}</span>
-                <span className="text-indigo-600 font-medium hover:underline cursor-pointer">
-                  Read SOP &rarr;
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </AppShell>
   );

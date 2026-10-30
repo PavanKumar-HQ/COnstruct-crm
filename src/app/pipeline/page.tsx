@@ -89,13 +89,13 @@ export default function PipelinePage() {
     <AppShell>
       <div className="space-y-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 liquid-glass-button-primary rounded-xl text-white shadow-md">
                 <Kanban className="w-5 h-5" />
               </span>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 drop-shadow-xs">
                 Executive Commercial Pipeline
               </h1>
             </div>
@@ -107,14 +107,14 @@ export default function PipelinePage() {
             <button
               onClick={fetchLeads}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 liquid-glass-card rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 transition"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-indigo-600" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-indigo-600" : "text-indigo-600"}`} />
               Refresh
             </button>
             <Link
-              href="/crm?tab=new_lead"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 rounded-lg text-xs font-medium text-white hover:bg-indigo-700 transition"
+              href="/crm"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 liquid-glass-button-primary rounded-xl text-xs font-semibold text-white transition shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Opportunity
@@ -123,7 +123,7 @@ export default function PipelinePage() {
         </div>
 
         {error && (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center justify-between">
+          <div className="p-4 bg-amber-500/15 border border-amber-500/30 rounded-2xl text-amber-900 text-xs flex items-center justify-between backdrop-blur-md">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-amber-600" />
               <span>{error}</span>
@@ -136,14 +136,14 @@ export default function PipelinePage() {
           {PIPELINE_STAGES.map((stage) => {
             const { count, total } = getStageTotal(stage.key);
             return (
-              <div key={stage.key} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate">
+              <div key={stage.key} className="liquid-glass-card p-4 rounded-2xl min-w-0">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
                   {stage.label}
                 </div>
-                <div className="text-lg font-bold text-slate-900 mt-1">
+                <div className="text-xl font-extrabold text-slate-900 mt-1 tracking-tight">
                   {count} <span className="text-xs font-normal text-slate-400">deals</span>
                 </div>
-                <div className="text-[11px] font-mono text-indigo-600 font-medium mt-0.5">
+                <div className="text-[11px] font-mono text-indigo-600 font-bold mt-1">
                   {total}
                 </div>
               </div>
@@ -152,24 +152,24 @@ export default function PipelinePage() {
         </div>
 
         {/* Kanban Board Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 overflow-x-auto pb-6">
+        <div className="flex gap-4 overflow-x-auto pb-6 pt-1">
           {PIPELINE_STAGES.map((stage) => {
             const stageLeads = leads.filter((l) => l.status === stage.key);
             return (
               <div
                 key={stage.key}
-                className="bg-slate-100/70 rounded-xl border border-slate-200/80 p-3 flex flex-col min-w-[220px]"
+                className="liquid-glass-subtle rounded-2xl border border-white/60 p-3.5 flex flex-col flex-1 min-w-[240px] max-w-[280px] shadow-sm flex-shrink-0"
               >
                 <div className="flex items-center justify-between mb-3 px-1">
-                  <span className="text-xs font-bold text-slate-700">{stage.label}</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 bg-white border border-slate-200 rounded-full text-slate-600 font-semibold">
+                  <span className="text-xs font-bold text-slate-800">{stage.label}</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 liquid-glass-card rounded-full text-slate-700 font-bold">
                     {stageLeads.length}
                   </span>
                 </div>
 
-                <div className="space-y-2.5 flex-1 overflow-y-auto max-h-[650px]">
+                <div className="space-y-2.5 flex-1 overflow-y-auto max-h-[650px] pr-1">
                   {stageLeads.length === 0 ? (
-                    <div className="py-8 text-center text-[11px] text-slate-400 border border-dashed border-slate-300 rounded-lg">
+                    <div className="py-8 text-center text-[11px] text-slate-400 border border-dashed border-slate-300/60 rounded-xl bg-white/20">
                       Empty stage
                     </div>
                   ) : (
@@ -177,9 +177,9 @@ export default function PipelinePage() {
                       <Link
                         key={lead.id}
                         href="/crm"
-                        className="block bg-white p-3 rounded-lg border border-slate-200 shadow-2xs hover:border-indigo-400 hover:shadow-xs transition group"
+                        className="block liquid-glass-card p-3.5 rounded-xl border border-white/80 hover:border-indigo-400/60 transition group shadow-xs"
                       >
-                        <div className="text-xs font-semibold text-slate-900 group-hover:text-indigo-600 transition leading-snug">
+                        <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition leading-snug">
                           {lead.title}
                         </div>
                         {lead.contactName && (
@@ -187,15 +187,15 @@ export default function PipelinePage() {
                             {lead.contactName}
                           </div>
                         )}
-                        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                          <span className="font-mono font-bold text-slate-800">
+                        <div className="mt-3 pt-2.5 border-t border-slate-200/50 flex items-center justify-between text-[11px]">
+                          <span className="font-mono font-extrabold text-slate-800">
                             {formatCurrency(lead.estimatedBudget)}
                           </span>
                           <span
-                            className={`text-[9px] px-1.5 py-0.5 rounded font-semibold ${
+                            className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
                               lead.priority === "URGENT" || lead.priority === "HIGH"
-                                ? "bg-red-50 text-red-700"
-                                : "bg-slate-100 text-slate-600"
+                                ? "bg-red-500/15 text-red-700 border border-red-500/20"
+                                : "bg-slate-200/60 text-slate-700"
                             }`}
                           >
                             {lead.priority}

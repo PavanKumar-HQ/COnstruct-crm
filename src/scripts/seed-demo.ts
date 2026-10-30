@@ -31,6 +31,11 @@ async function main() {
   if (existingOrg) {
     console.log(`Cleaning existing records for demo tenant: ${existingOrg.id}...`);
     const orgId = existingOrg.id;
+    await prisma.projectMilestone.deleteMany({ where: { organizationId: orgId } });
+    await prisma.workPackage.deleteMany({ where: { organizationId: orgId } });
+    await prisma.project.deleteMany({ where: { organizationId: orgId } });
+    await prisma.changeOrder.deleteMany({ where: { organizationId: orgId } });
+    await prisma.contract.deleteMany({ where: { organizationId: orgId } });
     await prisma.quotationRevision.deleteMany({ where: { organizationId: orgId } });
     await prisma.quotation.deleteMany({ where: { organizationId: orgId } });
     await prisma.boqItem.deleteMany({ where: { organizationId: orgId } });
