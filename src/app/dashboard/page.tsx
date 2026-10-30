@@ -410,7 +410,7 @@ export default function DashboardPage() {
                     <span className="text-slate-400">by {log.user}</span>
                   </div>
                   <span className="text-slate-400 text-[11px]">
-                    {new Date(log.createdAt).toLocaleTimeString()}
+                    {log.createdAt ? new Date(log.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : ""}
                   </span>
                 </div>
               ))}
