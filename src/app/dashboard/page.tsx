@@ -236,8 +236,63 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 2-Column Section: Action Centre & Recent Leads */}
+        {/* 2-Column Section: Real Pipeline Stage Bar Chart & Action Centre */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Real Database Pipeline Visual Chart */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-indigo-600" />
+                <h2 className="text-sm font-bold text-slate-900">
+                  Pipeline Stage Distribution (Live Database)
+                </h2>
+              </div>
+              <Link href="/pipeline" className="text-xs text-indigo-600 font-medium hover:underline">
+                Open Kanban &rarr;
+              </Link>
+            </div>
+
+            {data?.pipelineBreakdown && data.pipelineBreakdown.length > 0 ? (
+              <div className="space-y-3 pt-1">
+                {data.pipelineBreakdown.map((item) => {
+                  const total = data.kpis.pipelineLeads || 1;
+                  const pct = Math.round((item.count / total) * 100);
+                  const stageLabels: Record<string, string> = {
+                    NEW: "New Enquiry",
+                    QUALIFIED: "Qualified",
+                    SITE_VISIT_SCHEDULED: "Site Visit Scheduled",
+                    ESTIMATION: "BOQ / Estimation",
+                    QUOTATION_SENT: "Proposal / Bid Sent",
+                    WON: "Contract Awarded",
+                    LOST: "Lost / Closed",
+                  };
+                  return (
+                    <div key={item.status} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-medium text-slate-700">
+                          {stageLabels[item.status] || item.status}
+                        </span>
+                        <span className="font-mono text-slate-500 font-semibold">
+                          {item.count} deals ({pct}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                        <div
+                          className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-400">
+                No pipeline deals recorded in database.
+              </div>
+            )}
+          </div>
+
           {/* Action Centre */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">

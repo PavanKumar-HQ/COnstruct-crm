@@ -124,7 +124,8 @@ interface Customer {
 }
 
 export default function CRMApp() {
-  const [activeTab, setActiveTab] = useState<"leads" | "customers" | "estimates" | "new_lead">("leads");
+  const [activeTab, setActiveTab] = useState<"leads" | "customers" | "estimates">("leads");
+  const [showNewLeadModal, setShowNewLeadModal] = useState<boolean>(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [estimatesList, setEstimatesList] = useState<any[]>([]);
@@ -695,10 +696,8 @@ export default function CRMApp() {
             <span>Customers & Accounts</span>
           </button>
           <button
-            onClick={() => { setActiveTab("new_lead"); setActiveLeadDetail(null); setActiveCustomerDetail(null); setActiveEstimateDetail(null); }}
-            className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors ${
-              activeTab === "new_lead" ? "bg-slate-800 text-white font-semibold" : "hover:bg-slate-800/60 text-slate-300"
-            }`}
+            onClick={() => setShowNewLeadModal(true)}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors hover:bg-slate-800/60 text-slate-300"
           >
             <Plus className="w-4 h-4 text-indigo-400" />
             <span>Create New Lead</span>
@@ -1156,7 +1155,7 @@ export default function CRMApp() {
                   />
                 </div>
                 <button
-                  onClick={() => setActiveTab("new_lead")}
+                  onClick={() => setShowNewLeadModal(true)}
                   className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition"
                 >
                   <Plus className="w-4 h-4" />
@@ -1315,110 +1314,116 @@ export default function CRMApp() {
           </div>
         )}
 
-        {/* 6. NEW LEAD FORM TAB */}
-        {activeTab === "new_lead" && (
-          <div className="max-w-2xl bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 mb-1">Create Construction Opportunity</h2>
-            <form onSubmit={handleCreateLead} className="space-y-4 mt-6">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
-                  Project Title <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newLeadForm.title}
-                  onChange={(e) => setNewLeadForm({ ...newLeadForm, title: e.target.value })}
-                  placeholder="e.g. Industrial Shed Construction"
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+        {/* MODAL: IN-PLACE CREATE LEAD */}
+        {showNewLeadModal && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl border border-slate-200 max-w-2xl w-full p-6 max-h-[90vh] overflow-auto">
+              <h2 className="text-lg font-semibold text-slate-900 mb-1">Create Construction Opportunity</h2>
+              <p className="text-xs text-slate-500 mb-4">Capture enquiry details directly into the live CRM database.</p>
+              <form onSubmit={async (e) => {
+                await handleCreateLead(e);
+                setShowNewLeadModal(false);
+              }} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Source</label>
-                  <select
-                    value={newLeadForm.source}
-                    onChange={(e) => setNewLeadForm({ ...newLeadForm, source: e.target.value })}
-                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white"
-                  >
-                    <option value="Direct Referral">Direct Referral</option>
-                    <option value="Website Enquiry">Website Enquiry</option>
-                    <option value="Site Banner">Site Banner</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Priority</label>
-                  <select
-                    value={newLeadForm.priority}
-                    onChange={(e) => setNewLeadForm({ ...newLeadForm, priority: e.target.value })}
-                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white"
-                  >
-                    <option value="LOW">Low</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="HIGH">High</option>
-                    <option value="URGENT">Urgent</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Contact Name</label>
+                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+                    Project Title <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    value={newLeadForm.contactName}
-                    onChange={(e) => setNewLeadForm({ ...newLeadForm, contactName: e.target.value })}
+                    required
+                    value={newLeadForm.title}
+                    onChange={(e) => setNewLeadForm({ ...newLeadForm, title: e.target.value })}
+                    placeholder="e.g. Industrial Shed Construction"
                     className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Source</label>
+                    <select
+                      value={newLeadForm.source}
+                      onChange={(e) => setNewLeadForm({ ...newLeadForm, source: e.target.value })}
+                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white"
+                    >
+                      <option value="Direct Referral">Direct Referral</option>
+                      <option value="Website Enquiry">Website Enquiry</option>
+                      <option value="Site Banner">Site Banner</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Priority</label>
+                    <select
+                      value={newLeadForm.priority}
+                      onChange={(e) => setNewLeadForm({ ...newLeadForm, priority: e.target.value })}
+                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white"
+                    >
+                      <option value="LOW">Low</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="HIGH">High</option>
+                      <option value="URGENT">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Contact Name</label>
+                    <input
+                      type="text"
+                      value={newLeadForm.contactName}
+                      onChange={(e) => setNewLeadForm({ ...newLeadForm, contactName: e.target.value })}
+                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Phone</label>
+                    <input
+                      type="text"
+                      value={newLeadForm.contactPhone}
+                      onChange={(e) => setNewLeadForm({ ...newLeadForm, contactPhone: e.target.value })}
+                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Budget (₹)</label>
+                    <input
+                      type="number"
+                      value={newLeadForm.estimatedBudget}
+                      onChange={(e) => setNewLeadForm({ ...newLeadForm, estimatedBudget: e.target.value })}
+                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Phone</label>
+                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Site Address</label>
                   <input
                     type="text"
-                    value={newLeadForm.contactPhone}
-                    onChange={(e) => setNewLeadForm({ ...newLeadForm, contactPhone: e.target.value })}
+                    value={newLeadForm.siteAddress}
+                    onChange={(e) => setNewLeadForm({ ...newLeadForm, siteAddress: e.target.value })}
                     className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Budget (₹)</label>
-                  <input
-                    type="number"
-                    value={newLeadForm.estimatedBudget}
-                    onChange={(e) => setNewLeadForm({ ...newLeadForm, estimatedBudget: e.target.value })}
-                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
-                  />
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewLeadModal(false)}
+                    className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                  >
+                    {actionLoading ? "Saving..." : "Create Lead"}
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Site Address</label>
-                <input
-                  type="text"
-                  value={newLeadForm.siteAddress}
-                  onChange={(e) => setNewLeadForm({ ...newLeadForm, siteAddress: e.target.value })}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("leads")}
-                  className="px-4 py-2 text-sm text-slate-600"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
-                >
-                  {actionLoading ? "Saving..." : "Create Lead"}
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         )}
 

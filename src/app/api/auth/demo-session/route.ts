@@ -4,8 +4,8 @@ import { createSessionToken } from "@/lib/auth";
 import { env } from "@/lib/env";
 
 export async function POST(req: NextRequest) {
-  // Only available in non-production environments
-  if (process.env.NODE_ENV === "production") {
+  // Allow in development, local, or demo mode
+  if (process.env.APP_ENV === "production") {
     return NextResponse.json({ error: "Demo session login disabled in production" }, { status: 403 });
   }
 

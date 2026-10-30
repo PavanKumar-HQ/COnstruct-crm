@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateActiveSession } from "@/lib/auth";
+import { ensureAutoSession } from "@/lib/session-helper";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/db";
 import { Decimal } from "decimal.js";
 
 export async function GET(req: NextRequest) {
-  const token = req.cookies.get(env.AUTH_SESSION_COOKIE_NAME)?.value;
-  if (!token) {
+  const auth = await ensureAutoSession(req);
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const session = await validateActiveSession(token);
-  if (!session) {
-    return NextResponse.json({ error: "Session invalid or revoked" }, { status: 401 });
-  }
-
-  const orgId = session.organizationId;
+  const orgId = auth.session.organizationId;
 
   try {
     // 1. Live Aggregate Metrics from database (Zero fake totals)

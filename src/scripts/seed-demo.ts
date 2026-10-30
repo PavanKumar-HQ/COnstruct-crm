@@ -73,6 +73,7 @@ async function main() {
     "site_visits:read", "site_visits:write",
     "activities:read", "activities:write",
     "estimates:read", "estimates:write", "estimates:approve",
+    "quotes:read", "quotes:write", "quotes:approve",
     "quotations:read", "quotations:write", "quotations:approve",
     "projects:read", "projects:write", "projects:admin",
     "finance:read", "finance:write", "finance:transact",
